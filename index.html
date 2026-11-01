@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stoichio</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #1c2029; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6; font-size: 16px; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+  header { border-bottom: 1px solid #e5e9f0; padding: 18px 0; background: #fff; position: sticky; top: 0; z-index: 5; }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-size: 1.15rem; font-weight: 700; color: #1c2029; text-decoration: none; }
+  nav a { color: #57607a; text-decoration: none; margin-left: 22px; font-size: 0.94rem; }
+  nav a:hover { color: #0d8a66; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 40px 0 8px; }
+  h2 { font-size: 1.25rem; margin: 40px 0 10px; }
+  h3 { font-size: 1rem; margin: 20px 0 6px; }
+  p { margin: 0 0 12px; color: #3a4053; }
+  .sub { color: #6b7280; font-size: 0.95rem; }
+  section { padding: 8px 0 24px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  input[type=text] { flex: 1 1 320px; min-width: 0; padding: 11px 14px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; border: 1px solid #d8dee8; border-radius: 8px; background: #fff; }
+  input[type=text]:focus { outline: none; border-color: #0d8a66; box-shadow: 0 0 0 3px rgba(13,138,102,.12); }
+  button { font-family: inherit; font-size: 15px; font-weight: 600; padding: 10px 18px; border-radius: 8px; border: 1px solid #0d8a66; background: #0d8a66; color: #fff; cursor: pointer; transition: background 0.15s; }
+  button:hover { background: #0a7054; border-color: #0a7054; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 20px; }
+  .chips .label { color: #6b7280; font-size: 0.88rem; align-self: center; margin-right: 4px; }
+  .chip { background: #f4f7fb; color: #3a4053; border: 1px solid #e0e6ef; padding: 6px 12px; border-radius: 999px; font-size: 13px; cursor: pointer; font-family: ui-monospace, Menlo, Consolas, monospace; transition: all 0.15s; }
+  .chip:hover { border-color: #0d8a66; color: #0d8a66; background: #eef8f4; }
+  .out { margin-top: 6px; padding: 16px 18px; background: #f4faf7; border: 1px solid #d4ebe0; border-radius: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; white-space: pre-wrap; word-break: break-word; color: #17402f; display: none; }
+  .out.on { display: block; }
+  .out.err { background: #fdf3f0; border-color: #f4d3c6; color: #8a3a1c; font-family: system-ui, sans-serif; font-size: 14px; }
+  .out table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+  .out th, .out td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #d4ebe0; font-size: 13px; }
+  .out th { font-weight: 600; color: #4a5266; text-transform: uppercase; letter-spacing: 0.03em; font-size: 11px; }
+  .out h4 { margin: 14px 0 4px; font-family: system-ui, sans-serif; font-size: 14px; color: #0a7054; }
+  .big { font-size: 18px; margin: 4px 0 10px; color: #0a7054; }
+  footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid #e5e9f0; color: #6b7280; font-size: 0.9rem; text-align: center; }
+  
+  /* Periodic Table */
+  .ptable { display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 3px; margin: 16px 0; font-size: 10px; }
+  .ptable .el { aspect-ratio: 1; background: #f4f7fb; border: 1px solid #e0e6ef; border-radius: 4px; padding: 3px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; overflow: hidden; }
+  .ptable .el:hover { background: #eef8f4; border-color: #0d8a66; }
+  .ptable .el.empty { background: transparent; border: none; cursor: default; }
+  .ptable .sym { font-weight: 700; font-size: 11px; color: #1c2029; }
+  .ptable .num { color: #8892a4; font-size: 9px; }
+  .ptable .mass { color: #57607a; font-size: 8px; }
+  .ptable .el.g1 { background: #fef3f0; }
+  .ptable .el.g2 { background: #fff8e6; }
+  .ptable .el.g3 { background: #eef6ff; }
+  .ptable .el.g4 { background: #f0f6ee; }
+  .ptable .el.g5 { background: #f5efff; }
+  .ptable .el.g6 { background: #eafaf6; }
+  .ptable .el.g7 { background: #fdf0f4; }
+  .ptable .el.g8 { background: #f4f4f8; }
+  
+  .selected-el { margin-top: 12px; padding: 16px 18px; background: #f4faf7; border: 1px solid #d4ebe0; border-radius: 10px; display: none; font-size: 14px; }
+  .selected-el.on { display: block; }
+  .selected-el .el-head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+  .selected-el .el-symbol { width: 52px; height: 52px; background: #0d8a66; color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; }
+  .selected-el .el-name { font-size: 16px; font-weight: 700; color: #1c2029; }
+  .selected-el .el-meta { font-size: 12px; color: #57607a; }
+  .selected-el .el-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .selected-el .el-stats > div { background: #fff; border: 1px solid #d4ebe0; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; }
+  .selected-el .k { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em; }
+  .selected-el .v { font-size: 13px; color: #1c2029; font-weight: 600; }
+  .selected-el .el-desc { color: #3a4053; font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
+  .selected-el .el-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .selected-el button { font-family: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 6px; cursor: pointer; border: 1px solid #d8dee8; background: #fff; color: #3a4053; }
+  .selected-el button:hover { border-color: #0d8a66; color: #0d8a66; background: #eef8f4; }
+  .selected-el button.el-insert { background: #0d8a66; border-color: #0d8a66; color: #fff; }
+  .selected-el button.el-insert:hover { background: #0a7054; border-color: #0a7054; }
+  .selected-el button:disabled { opacity: 0.7; cursor: default; }
+
+  /* Study Hub */
+  .study-box { background: #fafbfd; border: 1px solid #e5e9f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  textarea.notes-input { width: 100%; min-height: 80px; padding: 12px 14px; font-family: inherit; font-size: 15px; border: 1px solid #d8dee8; border-radius: 8px; resize: vertical; margin-bottom: 12px; }
+  textarea.notes-input:focus { outline: none; border-color: #0d8a66; box-shadow: 0 0 0 3px rgba(13,138,102,.12); }
+  .results-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
+  @media (min-width: 700px) { .results-grid { grid-template-columns: 1fr 1fr; } }
+  .video-card { border: 1px solid #e5e9f0; border-radius: 10px; overflow: hidden; background: #fff; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .video-card iframe { width: 100%; aspect-ratio: 16/9; border: none; display: block; }
+  .video-card .video-title { padding: 12px; font-weight: 600; font-size: 0.95rem; border-top: 1px solid #e5e9f0; background: #fafbfd; }
+  .practice-card { background: #f4faf7; border: 1px solid #d4ebe0; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; }
+  .practice-card h4 { margin: 0 0 12px; color: #0a7054; font-size: 1.1rem; }
+  .practice-q { margin-bottom: 16px; font-weight: 500; font-size: 1rem; }
+  .practice-options { display: flex; flex-direction: column; gap: 10px; }
+  .practice-options button { text-align: left; padding: 12px; background: #fff; border: 1px solid #d8dee8; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.95rem; transition: all 0.15s; color: #1c2029; font-weight: 400; }
+  .practice-options button:hover { background: #eef8f4; border-color: #0d8a66; }
+  .placeholder-text { text-align: center; color: #8892a4; font-style: italic; padding: 40px 0; grid-column: 1 / -1; }
+
+  @media (max-width: 600px) {
+    nav a { margin-left: 14px; font-size: 0.88rem; }
+    h1 { font-size: 1.5rem; }
+    .ptable { font-size: 8px; }
+    .ptable .sym { font-size: 9px; }
+    .ptable .mass { display: none; }
+  }
+
+/* Stoichio 2.0 navigation */
+.view {display:none} .view.active {display:block} .home-hero{background:linear-gradient(120deg,#e7f6ee,#f5faf8);border:1px solid #d4ebe0;border-radius:20px;padding:42px 30px;margin:34px 0 24px}.home-hero h1{margin:0 0 12px;font-size:clamp(2rem,5vw,3rem)}.home-grid,.topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px;margin:22px 0}.nav-card{display:block;text-align:left;background:#fff;color:#1c2029;border:1px solid #dce7e2;border-radius:14px;padding:22px;cursor:pointer}.nav-card:hover{background:#effaf5;border-color:#0d8a66}.nav-card strong{display:block;font-size:1.12rem;margin-bottom:8px}.nav-card span{font-size:.9rem;color:#57607a}.lesson{border:1px solid #e0e6ef;border-radius:14px;padding:22px;background:#fff;margin:16px 0}.lesson h3{margin-top:12px}.lesson ul{padding-left:22px}.lesson li{margin:7px 0}.lesson .worked{padding:15px;background:#f4faf7;border-radius:10px}.study-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}.study-controls select{padding:10px;border:1px solid #d8dee8;border-radius:8px}.quiz-status{font-weight:600;color:#0a7054}.answer-feedback{margin-top:12px;padding:12px;border-radius:8px;background:#f4faf7;color:#17402f}.practice-options button:disabled{cursor:default}.nav-links{display:flex;gap:14px;flex-wrap:wrap}.nav-links button{background:transparent;border:0;color:#57607a;padding:5px;font-size:14px}.nav-links button:hover{color:#0d8a66;background:transparent}.tool-pane{padding-top:16px}@media(max-width:600px){.home-hero{padding:25px 20px}.nav-links{gap:5px}.nav-links button{font-size:12px}}
+/* A quieter, more editorial homepage */
+.home-hero{background:#f4f8f5;border:0;border-left:4px solid #0d8a66;border-radius:3px;padding:48px 36px;margin-top:44px}
+.home-hero p:first-child{font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.home-hero h1{max-width:660px;letter-spacing:-.045em;line-height:1.12;font-weight:650}
+.home-hero p:last-child{max-width:540px;font-size:1.03rem;line-height:1.7}
+.home-grid{gap:12px}
+.nav-card{position:relative;border-radius:6px;padding:26px 24px;box-shadow:none;transition:border-color .15s,transform .15s,background .15s}
+.home-grid .nav-card{min-height:156px;padding-right:38px}
+.home-grid .nav-card::after{content:'↗';position:absolute;right:20px;top:22px;color:#0d8a66;font-size:19px;font-weight:400}
+.nav-card:hover{transform:translateY(-2px);background:#fafdfb}
+.nav-card strong{font-weight:650;letter-spacing:-.015em}
+.nav-card span{line-height:1.55;display:block}
+@media(max-width:600px){.home-hero{padding:32px 23px}}
+.note-section{border-top:1px solid #e5e9f0;padding:12px 0 5px}.note-section p{line-height:1.85;max-width:75ch}.lesson-intro{font-size:1.08rem}.lesson h2{margin-top:30px}
+
+/* Interactive bonding models */
+.bond-lab{margin:28px 0;padding:22px;border:1px solid #dce8e3;border-radius:14px;background:#f8fbfa}
+.bond-lab h3{margin:0 0 6px}.bond-lab p{margin:0 0 12px}
+.bond-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.bond-tabs button,.bond-actions button{background:white;color:#126b54;border:1px solid #b8d8ca}.bond-tabs button.selected{background:#126b54;color:white}
+.bond-stage{background:white;border:1px solid #e1eae6;border-radius:12px;padding:10px;overflow:hidden}.bond-stage svg{display:block;width:100%;height:auto;max-height:280px}
+.bond-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}.bond-caption{min-height:52px;margin-top:12px!important;line-height:1.65}
+.electron-dot{fill:#e3a43c;stroke:#fff;stroke-width:1.5}.electron-moving{transition:transform 1.1s ease-in-out}.bond-label{font:600 17px system-ui;fill:#203d35}.bond-small{font:13px system-ui;fill:#5c726a}
+@media(prefers-reduced-motion:reduce){.electron-moving{transition:none}}
+
+/* Visual learning labs */
+.visual-lab{margin:28px 0;padding:22px;border:1px solid #dce8e3;border-radius:14px;background:#f8fbfa}
+.visual-lab h3{margin:0 0 8px}.visual-lab p{line-height:1.65}
+.visual-tabs,.visual-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:14px 0}
+.visual-tabs button,.visual-controls button{background:white;color:#126b54;border:1px solid #b8d8ca}
+.visual-tabs button.selected{background:#126b54;color:white}
+.visual-canvas{background:#fff;border:1px solid #e1eae6;border-radius:12px;padding:12px;overflow:hidden}
+.visual-canvas svg{width:100%;height:auto;display:block;max-height:340px}
+.visual-caption{min-height:55px;margin:12px 0 0!important}
+.visual-canvas text{font-family:system-ui, sans-serif}
+
+/* About page */
+.about-page{padding-top:26px}.about-heading{border-bottom:1px solid #e1e9e5;padding:20px 0 28px}.about-eyebrow{font-size:.77rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#0d8a66}.about-heading h1{max-width:650px;font-size:clamp(2rem,5vw,2.8rem);letter-spacing:-.035em;margin:10px 0 14px}.about-lead{font-size:1.1rem;color:#0a7054}.about-copy{max-width:690px;padding:12px 0 26px}.about-copy h2{margin-top:35px;font-size:1.28rem}.about-copy p{line-height:1.85;margin-bottom:16px}.about-contact{margin:36px 0 25px;padding:24px;background:#f4f8f5;border-left:3px solid #0d8a66}.about-contact h2{margin-top:0}.about-contact-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.about-contact-links a{display:flex;flex-direction:column;gap:3px;padding:12px 16px;background:white;border:1px solid #d7e5dd;border-radius:7px;text-decoration:none;overflow-wrap:anywhere;min-width:190px;color:#1c2029}.about-contact-links a:hover{border-color:#0d8a66}.about-contact-links span{font-size:.76rem;color:#697b70}.about-contact-links strong{font-size:.95rem;color:#0a7054}.about-signoff{font-style:normal;color:#58665e}@media(max-width:600px){header .wrap{align-items:flex-start;gap:8px;flex-wrap:wrap}.nav-links{width:100%;justify-content:space-between}.nav-links button{font-size:12px;padding:5px 2px}.about-contact{padding:18px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a href="#" onclick="showView('home');return false" class="brand">Stoichio</a>
+    <div class="nav-links"><button onclick="showView('home')">Home</button><button onclick="showView('learn')">Learn</button><button onclick="showView('practice')">Practise</button><button onclick="showView('tools')">Tools</button><button onclick="showView('periodic')">Elements</button><button onclick="showView('about')">About</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+<section id="home-view" class="view active"><div class="home-hero"><p style="color:#0a7054;font-weight:700">STOICHIO - </p><h1>Chemistry made simple.</h1><p>Notes, worked examples and question banks. Pick a topic and get started.</p></div><h2>Where do you want to start?</h2><div class="home-grid"><button class="nav-card" onclick="showView('learn')"><strong>Learn chemistry</strong><span>Understand the ideas, then see how they work</span></button><button class="nav-card" onclick="showView('practice')"><strong>Practise questions</strong><span>Try a few questions and see what you know</span></button><button class="nav-card" onclick="showView('tools')"><strong>Chemistry tools</strong><span>Quick help with equations and calculations</span></button><button class="nav-card" onclick="showView('periodic')"><strong>Periodic table</strong><span>Look up elements and their properties</span></button></div></section>
+<section id="learn-view" class="view"><h1>Learn chemistry</h1><p class="sub">Choose a topic to learn the concepts, explore a worked example and practise what you learnt.</p><div id="topic-cards" class="topic-grid"></div><div id="lesson-content"></div></section>
+<section id="practice-view" class="view"><h1>Practice centre</h1><p class="sub">Build your own quiz. Every question comes with an explanation.</p><div class="study-controls"><label>Topic <select id="quiz-topic"></select></label><label>Difficulty <select id="quiz-level"><option value="easy">Foundation</option><option value="medium">Intermediate</option><option value="hard">Challenge</option><option value="mixed" selected>Mixed</option></select></label><label>Questions <select id="quiz-count"><option>5</option><option selected>10</option><option>15</option><option>20</option></select></label><button onclick="startQuiz()">Start quiz</button></div><div id="quiz-progress" class="quiz-status"></div><div id="quiz-area"></div></section>
+<section id="tools-view" class="view tool-pane">
+
+  <!-- STUDY HUB -->
+  <section id="learn">
+    <h1>Study Hub</h1>
+    <p class="sub">Type a topic (like "acids and bases", "atomic structure", or "balancing equations") to instantly pull up relevant videos and generate practice questions.</p>
+    
+    <div class="study-box">
+      <textarea id="notes-input" class="notes-input" placeholder="What are you studying today?"></textarea>
+      <button onclick="generateStudyMaterials()">Find Study Materials</button>
+    </div>
+
+    <div id="study-results" class="results-grid">
+      <div class="placeholder-text">Your videos and practice questions will appear here.</div>
+    </div>
+  </section>
+
+  <!-- ORIGINAL CALCULATORS -->
+  <h1 style="margin-top: 60px; border-top: 1px solid #e5e9f0; padding-top: 40px;">Chemistry Calculator</h1>
+  <p class="sub">Balance equations, find molar masses, and predict products.</p>
+
+  <h2 id="balance">Balance a chemical equation</h2>
+  <p class="sub">Type a reaction like <code>C3H8 + O2 -> CO2 + H2O</code>. Any arrow works: <code>-></code>, <code>=</code>, <code>→</code>. Subscripts are plain numbers: <code>H2O</code>, <code>Fe2(SO4)3</code>.</p>
+
+  <section>
+    <div class="row">
+      <input type="text" id="eq" placeholder="C3H8 + O2 -> CO2 + H2O" autocomplete="off" spellcheck="false">
+      <button onclick="doBalance()">Balance</button>
+    </div>
+    <div class="chips">
+      <span class="label">Examples:</span>
+      <span class="chip" onclick="fillEq(this)">C3H8 + O2 -> CO2 + H2O</span>
+      <span class="chip" onclick="fillEq(this)">Fe + O2 -> Fe2O3</span>
+      <span class="chip" onclick="fillEq(this)">H2 + O2 -> H2O</span>
+      <span class="chip" onclick="fillEq(this)">Ca(OH)2 + H3PO4 -> Ca3(PO4)2 + H2O</span>
+      <span class="chip" onclick="fillEq(this)">KMnO4 + HCl -> KCl + MnCl2 + H2O + Cl2</span>
+      <span class="chip" onclick="fillEq(this)">NaHCO3 -> Na2CO3 + H2O + CO2</span>
+      <span class="chip" onclick="fillEq(this)">AgNO3 + NaCl -> AgCl + NaNO3</span>
+    </div>
+    <div id="out" class="out"></div>
+  </section>
+
+  <h2 id="predict">Find the products</h2>
+  <p class="sub">Type the reactants. The site matches them against common reaction types and proposes likely products.</p>
+  <section>
+    <div class="row">
+      <input type="text" id="reactants" placeholder="e.g. CH4 + O2, or CaCO3, or HCl + NaOH" autocomplete="off" spellcheck="false">
+      <button onclick="doPredict()">Find products</button>
+    </div>
+    <div class="chips">
+      <span class="label">Examples:</span>
+      <span class="chip" onclick="fillReact(this)">CH4 + O2</span>
+      <span class="chip" onclick="fillReact(this)">HCl + NaOH</span>
+      <span class="chip" onclick="fillReact(this)">AgNO3 + NaCl</span>
+      <span class="chip" onclick="fillReact(this)">Zn + HCl</span>
+      <span class="chip" onclick="fillReact(this)">CaCO3</span>
+      <span class="chip" onclick="fillReact(this)">H2 + O2</span>
+    </div>
+    <div id="pout" class="out"></div>
+  </section>
+
+  <h2 id="mass">Molar mass</h2>
+  <p class="sub">Enter any formula. You get the total and a per element breakdown.</p>
+  <section>
+    <div class="row">
+      <input type="text" id="formula" placeholder="C6H12O6" autocomplete="off" spellcheck="false">
+      <button onclick="doMass()">Calculate</button>
+    </div>
+    <div class="chips">
+      <span class="label">Examples:</span>
+      <span class="chip" onclick="fillFormula(this)">C6H12O6</span>
+      <span class="chip" onclick="fillFormula(this)">NaCl</span>
+      <span class="chip" onclick="fillFormula(this)">CuSO4·5H2O</span>
+      <span class="chip" onclick="fillFormula(this)">Ca(NO3)2</span>
+      <span class="chip" onclick="fillFormula(this)">H2SO4</span>
+    </div>
+    <div id="mout" class="out"></div>
+  </section>
+
+  </section><section id="periodic-view" class="view"><h1>Periodic table</h1><h2 id="periodic">Periodic table</h2>
+  <p class="sub">Click any element to see its name, category, atomic mass, melting point, boiling point, density, and a short description.</p>
+  <div class="ptable" id="ptable"></div>
+  <div class="selected-el" id="selected"></div>
+
+  </section>
+<section id="about-view" class="view about-page">
+  <div class="about-heading"><h1>About this Project</h1></div>
+  <div class="about-copy">
+    <h2>How it started</h2>
+    <p>Hi, I'm a high school student who likes chemistry. I never planned to make this website, but I've always liked explaining chemistry concepts and making tutorials for my friends. Eventually, I just thought it might be fun to try building chemistry related.</p>
+    <p>Stoichio originally started as a simple chemistry calculator. Everything in the Tools section is what this entire website used to be.</p>
+    <p>After showing it to some friends and asking for feedback, a few of them suggested adding lessons, notes, and practice questions, and that's how the rest of Stoichio came about.</p>
+    <h2>What I'm working towards</h2>
+    <p>Stoichio started as something I made for myself and my friends, but I hope it can eventually help students beyond just the people I know. Whether you're trying to understand a topic, need some practice, or just want to check a calculation, I hope there's something here that can help you.</p>
+    <p>Right now, Stoichio only covers some of the more basic chemistry topics, but I'm hoping to expand it and add more advanced content over time.</p>
+    <p>I'm still a student myself and this is just a little side project, so there might be bugs, mistakes or things that don't work properly. I'll keep adding and fixing things as I go.</p>
+    <div class="about-contact"><h2>Questions, feedback or suggestions?</h2><p>If you spot a bug, have a question or think there's something I should add, I'd love to hear from you. Please feel free to send me a DM or an email.</p>
+      <div class="about-contact-links"><a href="https://www.instagram.com/stoichio.26/" target="_blank" rel="noopener noreferrer"><span>Instagram</span><strong>@stoichio.26</strong></a><a href="mailto:fxq.projects@gmail.com"><span>Email</span><strong>fxq.projects@gmail.com</strong></a></div>
+    </div>
+    <p class="about-signoff">Thanks for checking out Stoichio.</p>
+  </div>
+</section>
+<section id="faq-view" class="view"><h2 id="faq">FAQ</h2>
+  <h3>What arrow can I use?</h3>
+  <p>Any of these work: <code>-&gt;</code>, <code>=</code>, <code>→</code>, <code>⟶</code>, <code>⇒</code>. If the site can't find an arrow, it tells you what it saw and gives you an example.</p>
+
+  <h3>Why does the answer show coefficients like "5 O2"?</h3>
+  <p>That is the balanced form. It means five molecules of O2. When the coefficient is 1, the site leaves it out, so you see <code>H2O</code> instead of <code>1 H2O</code>.</p>
+
+  <h3>How do I write subscripts?</h3>
+  <p>As plain numbers right after the element. <code>H2O</code>, not H₂O. <code>Fe2(SO4)3</code>, not Fe₂(SO₄)₃. Parentheses and brackets both work.</p>
+</section></main>
+
+<footer>
+  <div class="wrap">
+    <div style="margin-bottom: 6px;">A.F. · Student Project</div>
+    <a href="https://www.instagram.com/stoichio.26" target="_blank" style="color: #0d8a66; text-decoration: none; margin-right: 8px;">Instagram</a>
+    <span style="color: #d8dee8;">|</span>
+    <a href="mailto:fxq.projects@gmail.com" style="color: #0d8a66; text-decoration: none; margin-left: 8px;">Email</a>
+  </div>
+</footer>
+
+<script>
+/* ==========================================
+   1. ORIGINAL CALCULATOR LOGIC & FULL DATA
+   ========================================== */
+const ELEMENTS = [
+  [1,"H",1.008,"g1",1,1,"Hydrogen","Nonmetal",-259.14,-252.87,0.0899,"The lightest element. Fuels stars. Burns with oxygen to make water."],
+  [2,"He",4.0026,"g8",1,18,"Helium","Noble gas",-272.2,-268.93,0.1786,"Does not react with anything. Used in balloons and cooling magnets."],
+  [3,"Li",6.94,"g1",2,1,"Lithium","Alkali metal",180.54,1342,0.534,"Soft metal that reacts with water. Powers lithium-ion batteries."],
+  [4,"Be",9.0122,"g2",2,2,"Beryllium","Alkaline earth metal",1287,2469,1.85,"Light and stiff. Toxic dust. Used in aerospace alloys."],
+  [5,"B",10.81,"g3",2,13,"Boron","Metalloid",2076,3927,2.34,"Found in borax and glass. Absorbs neutrons."],
+  [6,"C",12.011,"g4",2,14,"Carbon","Nonmetal",3550,4027,2.267,"Backbone of all life. Forms diamond, graphite, and every organic molecule."],
+  [7,"N",14.007,"g5",2,15,"Nitrogen","Nonmetal",-210.1,-195.79,1.251,"78 percent of the air. Bonds so strongly it barely reacts."],
+  [8,"O",15.999,"g5",2,16,"Oxygen","Nonmetal",-218.79,-182.96,1.429,"Supports breathing and fire. Most abundant element in Earth's crust."],
+  [9,"F",18.998,"g7",2,17,"Fluorine","Halogen",-219.67,-188.11,1.696,"Most reactive element. Attacks almost everything."],
+  [10,"Ne",20.180,"g8",2,18,"Neon","Noble gas",-248.59,-246.08,0.9002,"Glows orange in signs. Otherwise inert."],
+  [11,"Na",22.990,"g1",3,1,"Sodium","Alkali metal",97.79,882.9,0.968,"Half of table salt. Explodes in water."],
+  [12,"Mg",24.305,"g2",3,2,"Magnesium","Alkaline earth metal",650,1090,1.738,"Burns white hot. Central atom in chlorophyll."],
+  [13,"Al",26.982,"g3",3,13,"Aluminium","Post-transition metal",660.32,2519,2.70,"Most abundant metal in Earth's crust. Light and corrosion resistant."],
+  [14,"Si",28.085,"g4",3,14,"Silicon","Metalloid",1414,3265,2.33,"Base of computer chips and sand."],
+  [15,"P",30.974,"g5",3,15,"Phosphorus","Nonmetal",44.15,280.5,1.823,"Key to DNA and ATP. White phosphorus glows in air."],
+  [16,"S",32.06,"g5",3,16,"Sulfur","Nonmetal",115.21,444.72,2.07,"Smells like rotten eggs when bonded to hydrogen. Found near volcanoes."],
+  [17,"Cl",35.45,"g7",3,17,"Chlorine","Halogen",-101.5,-34.04,3.214,"Purifies pools. Toxic gas on its own."],
+  [18,"Ar",39.948,"g8",3,18,"Argon","Noble gas",-189.34,-185.85,1.784,"Fills light bulbs. Does not react."],
+  [19,"K",39.098,"g1",4,1,"Potassium","Alkali metal",63.5,759,0.862,"Vital for nerves. Burns purple. Reacts violently with water."],
+  [20,"Ca",40.078,"g2",4,2,"Calcium","Alkaline earth metal",842,1484,1.55,"Builds bones and shells. Limestone is calcium carbonate."],
+  [21,"Sc",44.956,"g3",4,3,"Scandium","Transition metal",1541,2836,2.985,"Rare. Strengthens aluminium alloys."],
+  [22,"Ti",47.867,"g3",4,4,"Titanium","Transition metal",1668,3287,4.506,"Strong, light, rust proof. Used in jet engines and implants."],
+  [23,"V",50.942,"g3",4,5,"Vanadium","Transition metal",1910,3407,6.11,"Hardens steel. Named after a Norse goddess."],
+  [24,"Cr",51.996,"g3",4,6,"Chromium","Transition metal",1907,2671,7.15,"Shiny plating. Also toxic in the wrong form."],
+  [25,"Mn",54.938,"g3",4,7,"Manganese","Transition metal",1246,2061,7.21,"Hardens steel. Needed for photosynthesis."],
+  [26,"Fe",55.845,"g3",4,8,"Iron","Transition metal",1538,2861,7.874,"Core of Earth. Main metal in steel. Carries oxygen in blood."],
+  [27,"Co",58.933,"g3",4,9,"Cobalt","Transition metal",1495,2927,8.90,"Blue pigment. Key in lithium batteries."],
+  [28,"Ni",58.693,"g3",4,10,"Nickel","Transition metal",1455,2913,8.908,"Used in coins and stainless steel."],
+  [29,"Cu",63.546,"g3",4,11,"Copper","Transition metal",1084.62,2562,8.96,"Conducts electricity. Wires and old roofs."],
+  [30,"Zn",65.38,"g3",4,12,"Zinc","Transition metal",419.53,907,7.14,"Galvanizes steel. Part of many enzymes."],
+  [31,"Ga",69.723,"g3",4,13,"Gallium","Post-transition metal",29.76,2204,5.91,"Melts in your hand. Used in LED lights."],
+  [32,"Ge",72.630,"g4",4,14,"Germanium","Metalloid",938.3,2833,5.323,"Early transistor material. Now used in fibre optics."],
+  [33,"As",74.922,"g5",4,15,"Arsenic","Metalloid",817,614,5.727,"Famous poison. Also used in semiconductors."],
+  [34,"Se",78.971,"g5",4,16,"Selenium","Nonmetal",221,685,4.81,"Needed in tiny amounts. Used in photocopiers."],
+  [35,"Br",79.904,"g7",4,17,"Bromine","Halogen",-7.2,58.8,3.1028,"One of two elements that are liquid at room temperature."],
+  [36,"Kr",83.798,"g8",4,18,"Krypton","Noble gas",-157.37,-153.22,3.749,"Used in some lasers and old camera flashes."],
+  [37,"Rb",85.468,"g1",5,1,"Rubidium","Alkali metal",39.3,688,1.532,"Ignites in air. Used in atomic clocks."],
+  [38,"Sr",87.62,"g2",5,2,"Strontium","Alkaline earth metal",777,1382,2.64,"Burns red in fireworks."],
+  [39,"Y",88.906,"g3",5,3,"Yttrium","Transition metal",1526,3336,4.472,"Used in LEDs and superconductors."],
+  [40,"Zr",91.224,"g3",5,4,"Zirconium","Transition metal",1855,4409,6.52,"Corrosion resistant. Cladding for nuclear fuel."],
+  [41,"Nb",92.906,"g3",5,5,"Niobium","Transition metal",2477,4744,8.57,"Strengthens steel. Superconducting magnets."],
+  [42,"Mo",95.95,"g3",5,6,"Molybdenum","Transition metal",2623,4639,10.28,"Strong at high temperatures. Used in steel."],
+  [43,"Tc",98,"g3",5,7,"Technetium","Transition metal",2157,4265,11,"First artificially made element. Used in medical scans."],
+  [44,"Ru",101.07,"g3",5,8,"Ruthenium","Transition metal",2334,4150,12.37,"Hardens platinum. Used in electronics."],
+  [45,"Rh",102.91,"g3",5,9,"Rhodium","Transition metal",1964,3695,12.45,"Catalytic converters. Very expensive."],
+  [46,"Pd",106.42,"g3",5,10,"Palladium","Transition metal",1554.9,2963,12.023,"Absorbs hydrogen. Catalysts."],
+  [47,"Ag",107.87,"g3",5,11,"Silver","Transition metal",961.78,2162,10.49,"Best conductor. Kills bacteria."],
+  [48,"Cd",112.41,"g3",5,12,"Cadmium","Transition metal",321.07,767,8.65,"Toxic. Used in old batteries and yellow pigments."],
+  [49,"In",114.82,"g3",5,13,"Indium","Post-transition metal",156.6,2072,7.31,"Used in touchscreens and solder."],
+  [50,"Sn",118.71,"g3",5,14,"Tin","Post-transition metal",231.93,2602,7.31,"Alloyed with copper to make bronze."],
+  [51,"Sb",121.76,"g5",5,15,"Antimony","Metalloid",630.63,1587,6.697,"Flame retardant. Ancient cosmetic."],
+  [52,"Te",127.60,"g5",5,16,"Tellurium","Metalloid",449.51,988,6.24,"Rare. Used in solar panels."],
+  [53,"I",126.90,"g7",5,17,"Iodine","Halogen",113.7,184.3,4.933,"Needed by the thyroid. Purple vapour."],
+  [54,"Xe",131.29,"g8",5,18,"Xenon","Noble gas",-111.8,-108.1,5.894,"Used in bright lamps and ion thrusters."],
+  [55,"Cs",132.91,"g1",6,1,"Caesium","Alkali metal",28.44,671,1.93,"Most reactive metal. Defines the second."],
+  [56,"Ba",137.33,"g2",6,2,"Barium","Alkaline earth metal",727,1897,3.51,"Green in fireworks. Used in medical scans."],
+  [57,"La",138.91,"g3",6,3,"Lanthanum","Lanthanide",920,3464,6.162,"Used in camera lenses and batteries."],
+  [58,"Ce",140.12,"g3",6,4,"Cerium","Lanthanide",795,3443,6.770,"Sparks in lighter flints. Polishes glass."],
+  [59,"Pr",140.91,"g3",6,5,"Praseodymium","Lanthanide",935,3520,6.77,"Colours glass green. Used in magnets."],
+  [60,"Nd",144.24,"g3",6,6,"Neodymium","Lanthanide",1024,3074,7.01,"Strongest permanent magnets."],
+  [61,"Pm",145,"g3",6,7,"Promethium","Lanthanide",1042,3000,7.26,"Radioactive. Used in old glow-in-the-dark paint."],
+  [62,"Sm",150.36,"g3",6,8,"Samarium","Lanthanide",1072,1794,7.52,"Magnets used in headphones."],
+  [63,"Eu",151.96,"g3",6,9,"Europium","Lanthanide",826,1529,5.264,"Red phosphor in old TV screens."],
+  [64,"Gd",157.25,"g3",6,10,"Gadolinium","Lanthanide",1312,3273,7.90,"Contrast agent for MRI scans."],
+  [65,"Tb",158.93,"g3",6,11,"Terbium","Lanthanide",1356,3230,8.23,"Green phosphor. Used in magnets."],
+  [66,"Dy",162.50,"g3",6,12,"Dysprosium","Lanthanide",1407,2562,8.54,"Improves magnet strength at high temperatures."],
+  [67,"Ho",164.93,"g3",6,13,"Holmium","Lanthanide",1474,2700,8.79,"Used in medical lasers."],
+  [68,"Er",167.26,"g3",6,14,"Erbium","Lanthanide",1529,2868,9.066,"Amplifies light in fibre optic cables."],
+  [69,"Tm",168.93,"g3",6,15,"Thulium","Lanthanide",1545,1950,9.32,"Rarest stable lanthanide. Used in portable X-rays."],
+  [70,"Yb",173.05,"g3",6,16,"Ytterbium","Lanthanide",824,1196,6.90,"Used in atomic clocks."],
+  [71,"Lu",174.97,"g3",6,17,"Lutetium","Lanthanide",1652,3402,9.841,"Used in cancer treatment."],
+  [72,"Hf",178.49,"g3",6,18,"Hafnium","Transition metal",2233,4603,13.31,"Absorbs neutrons. Used in nuclear control rods."],
+  [73,"Ta",180.95,"g3",7,1,"Tantalum","Transition metal",3017,5458,16.69,"Used in capacitors and surgical implants."],
+  [74,"W",183.84,"g3",7,2,"Tungsten","Transition metal",3422,5555,19.25,"Highest melting point of any metal. Light bulb filaments."],
+  [75,"Re",186.21,"g3",7,3,"Rhenium","Transition metal",3186,5596,21.02,"Rare. Used in jet engine alloys."],
+  [76,"Os",190.23,"g3",7,4,"Osmium","Transition metal",3033,5012,22.59,"Densest natural element."],
+  [77,"Ir",192.22,"g3",7,5,"Iridium","Transition metal",2466,4428,22.56,"Rarest stable metal. Found in meteorites."],
+  [78,"Pt",195.08,"g3",7,6,"Platinum","Transition metal",1768.3,3825,21.45,"Catalytic converters. Jewellery. Very expensive."],
+  [79,"Au",196.97,"g3",7,7,"Gold","Transition metal",1064.18,2856,19.30,"Does not tarnish. Conducts well. Ancient money."],
+  [80,"Hg",200.59,"g3",7,8,"Mercury","Transition metal",-38.83,356.73,13.534,"Only metal that is liquid at room temperature. Toxic."],
+  [81,"Tl",204.38,"g3",7,9,"Thallium","Post-transition metal",304,1473,11.85,"Extremely toxic. Historic poison."],
+  [82,"Pb",207.2,"g3",7,10,"Lead","Post-transition metal",327.46,1749,11.34,"Dense. Toxic. Used to be in pipes and paint."],
+  [83,"Bi",208.98,"g3",7,11,"Bismuth","Post-transition metal",271.4,1564,9.78,"Forms colourful crystals. Used in Pepto-Bismol."],
+  [84,"Po",209,"g5",7,12,"Polonium","Metalloid",254,962,9.196,"Radioactive. Discovered by Marie Curie."],
+  [85,"At",210,"g7",7,13,"Astatine","Halogen",302,337,7,"Extremely rare. Fewer than 30 grams exist on Earth at once."],
+  [86,"Rn",222,"g8",7,14,"Radon","Noble gas",-71,-61.7,9.73,"Radioactive gas. Seeps from soil in some basements."],
+  [87,"Fr",223,"g1",8,1,"Francium","Alkali metal",27,677,1.87,"Most unstable natural element. Exists for minutes at a time."],
+  [88,"Ra",226,"g2",8,2,"Radium","Alkaline earth metal",700,1737,5.5,"Glows in the dark. Historic glow paint. Very radioactive."],
+  [89,"Ac",227,"g3",8,3,"Actinium","Actinide",1050,3200,10.07,"Glows blue in the dark. Rare and radioactive."],
+  [90,"Th",232.04,"g3",8,4,"Thorium","Actinide",1750,4788,11.72,"Possible nuclear fuel. Named after Thor."],
+  [91,"Pa",231.04,"g3",8,5,"Protactinium","Actinide",1568,4027,15.37,"Rare and radioactive."],
+  [92,"U",238.03,"g3",8,6,"Uranium","Actinide",1132.2,4131,19.1,"Fuels nuclear reactors. Radioactive metal."]
+];
+const PT = {};
+ELEMENTS.forEach(e => PT[e[1]] = e[2]);
+
+function parseFormula(formula) {
+  let i = 0;
+  function group() {
+    const comp = {};
+    while (i < formula.length) {
+      const ch = formula[i];
+      if (ch === '(' || ch === '[') {
+        i++;
+        const inner = group();
+        if (formula[i] !== ')' && formula[i] !== ']') throw new Error("Parenthesis mismatch in " + formula);
+        i++;
+        let n = 1, m = '';
+        while (i < formula.length && /\d/.test(formula[i])) m += formula[i++];
+        if (m) n = parseInt(m, 10);
+        for (const el in inner) comp[el] = (comp[el] || 0) + inner[el] * n;
+      } else if (ch === ')' || ch === ']') {
+        return comp;
+      } else if (/[A-Z]/.test(ch)) {
+        let sym = ch; i++;
+        while (i < formula.length && /[a-z]/.test(formula[i])) sym += formula[i++];
+        let n = '', num = 1;
+        while (i < formula.length && /\d/.test(formula[i])) n += formula[i++];
+        if (n) num = parseInt(n, 10);
+        comp[sym] = (comp[sym] || 0) + num;
+      } else if (/[\d\s]/.test(ch)) { i++; }
+      else throw new Error("Unexpected character '" + ch + "' in " + formula);
+    }
+    return comp;
+  }
+  const comp = group();
+  if (!Object.keys(comp).length) throw new Error("Empty formula: " + formula);
+  let mass = 0;
+  for (const el in comp) {
+    if (PT[el] === undefined) throw new Error("Unknown element: " + el);
+    mass += PT[el] * comp[el];
+  }
+  return { comp, mass };
+}
+
+function analyze(formula) {
+  formula = formula.trim();
+  if (!formula) throw new Error("Empty formula");
+  if (formula.includes('·') || formula.includes('*')) {
+    const parts = formula.split(/[·*]/);
+    const total = {}; let mass = 0;
+    for (let p of parts) {
+      p = p.trim();
+      let lead = 1;
+      const m = p.match(/^(\d+)(.+)$/);
+      if (m) { lead = parseInt(m[1], 10); p = m[2]; }
+      const r = parseFormula(p);
+      for (const el in r.comp) total[el] = (total[el] || 0) + r.comp[el] * lead;
+      mass += r.mass * lead;
+    }
+    return { comp: total, mass };
+  }
+  return parseFormula(formula);
+}
+
+function splitEquation(eq) {
+  const arrows = ['⟶','⟹','→','⇒','-->','==>','->','=>','='];
+  let idx = -1, chosen = null;
+  for (const a of arrows) {
+    const i = eq.indexOf(a);
+    if (i !== -1 && (idx === -1 || i < idx)) { idx = i; chosen = a; }
+  }
+  if (idx === -1) throw new Error("No arrow found. Use -> between reactants and products. Example: H2 + O2 -> H2O");
+  const left = eq.slice(0, idx).trim();
+  const right = eq.slice(idx + chosen.length).trim();
+  if (!left && !right) throw new Error("Both sides of the arrow are empty.");
+  if (!left) throw new Error("The left side of the arrow is empty. Add reactants before " + chosen + ". Example: H2 + O2 " + chosen + " H2O");
+  if (!right) throw new Error("The right side of the arrow is empty. Add products after " + chosen + ". Example: H2 + O2 " + chosen + " H2O");
+  return {
+    reactants: left.split('+').map(s => s.trim()).filter(Boolean),
+    products: right.split('+').map(s => s.trim()).filter(Boolean)
+  };
+}
+
+function stripCoefficient(sp) {
+  const m = sp.match(/^(\d+)\s*(.+)$/);
+  if (m) return { given: parseInt(m[1], 10), formula: m[2].trim() };
+  return { given: 1, formula: sp.trim() };
+}
+
+function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = b; b = a % b; a = t; } return a; }
+
+function balance(eq) {
+  const { reactants, products } = splitEquation(eq);
+  const rInfo = reactants.map(sp => { const { formula } = stripCoefficient(sp); const a = analyze(formula); return { formula, comp: a.comp, mass: a.mass }; });
+  const pInfo = products.map(sp => { const { formula } = stripCoefficient(sp); const a = analyze(formula); return { formula, comp: a.comp, mass: a.mass }; });
+
+  const elements = new Set();
+  rInfo.forEach(r => Object.keys(r.comp).forEach(e => elements.add(e)));
+  pInfo.forEach(p => Object.keys(p.comp).forEach(e => elements.add(e)));
+  const elList = [...elements];
+
+  const n = rInfo.length + pInfo.length;
+  const matrix = elList.map(el => [
+    ...rInfo.map(r => r.comp[el] || 0),
+    ...pInfo.map(p => -(p.comp[el] || 0))
+  ]);
+
+  const M = matrix.map(r => r.slice());
+  const pivots = [];
+  let row = 0;
+  for (let col = 0; col < n && row < M.length; col++) {
+    let p = -1;
+    for (let r = row; r < M.length; r++) if (Math.abs(M[r][col]) > 1e-10) { p = r; break; }
+    if (p === -1) continue;
+    [M[row], M[p]] = [M[p], M[row]];
+    const pv = M[row][col];
+    for (let c = 0; c < n; c++) M[row][c] /= pv;
+    for (let r = 0; r < M.length; r++) if (r !== row && Math.abs(M[r][col]) > 1e-10) {
+      const f = M[r][col];
+      for (let c = 0; c < n; c++) M[r][c] -= f * M[row][c];
+    }
+    pivots.push(col); row++;
+  }
+  const free = [];
+  for (let c = 0; c < n; c++) if (!pivots.includes(c)) free.push(c);
+  if (!free.length) throw new Error("No non-trivial solution exists. Double check the formulas.");
+
+  const sol = new Array(n).fill(0);
+  sol[free[0]] = 1;
+  pivots.forEach((pc, i) => sol[pc] = -M[i][free[0]]);
+
+  function rat(x) {
+    if (Math.abs(x) < 1e-9) return [0, 1];
+    const s = x < 0 ? -1 : 1; x = Math.abs(x);
+    let h1 = 1, h0 = 0, k1 = 0, k0 = 1, b = x;
+    for (let i = 0; i < 30; i++) {
+      const a = Math.floor(b);
+      const h2 = a * h1 + h0, k2 = a * k1 + k0;
+      if (Math.abs(x - h2 / k2) < 1e-9) return [s * h2, k2];
+      h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+      if (b - a < 1e-9) break;
+      b = 1 / (b - a);
+    }
+    return [s * Math.round(x * 1e6), 1e6];
+  }
+  const rats = sol.map(rat);
+  let L = 1;
+  rats.forEach(r => { L = Math.abs(L * r[1]) / gcd(L, r[1]); });
+  let ints = rats.map(r => r[0] * (L / r[1]));
+  let g = ints.reduce((a, v) => gcd(a, v), 0) || 1;
+  ints = ints.map(v => v / g);
+  if (ints.filter(v => v < 0).length > ints.length / 2) ints = ints.map(v => -v);
+  if (ints.some(v => v < 0)) throw new Error("No all positive solution. Check the formulas.");
+
+  const rc = ints.slice(0, rInfo.length);
+  const pc = ints.slice(rInfo.length);
+  const fmt = (c, f) => c === 1 ? f : c + ' ' + f;
+  const balanced = rc.map((c, i) => fmt(c, rInfo[i].formula)).join(' + ')
+                 + ' → ' + pc.map((c, i) => fmt(c, pInfo[i].formula)).join(' + ');
+
+  return {
+    balanced,
+    elements: elList,
+    reactants: rInfo.map((r, i) => ({ formula: r.formula, coeff: rc[i], mass: r.mass, comp: r.comp })),
+    products: pInfo.map((p, i) => ({ formula: p.formula, coeff: pc[i], mass: p.mass, comp: p.comp }))
+  };
+}
+
+const COMMON = {
+  "HCl+NaOH": ["NaCl", "H2O"], "HCl+KOH": ["KCl", "H2O"], "H2SO4+NaOH": ["Na2SO4", "H2O"], "HNO3+NaOH": ["NaNO3", "H2O"], "CH3COOH+NaOH": ["CH3COONa", "H2O"],
+  "AgNO3+NaCl": ["AgCl", "NaNO3"], "BaCl2+Na2SO4": ["BaSO4", "NaCl"], "Pb(NO3)2+KI": ["PbI2", "KNO3"], "CaCl2+Na2CO3": ["CaCO3", "NaCl"],
+  "HCl+Na2CO3": ["NaCl", "H2O", "CO2"], "HCl+NaHCO3": ["NaCl", "H2O", "CO2"],
+  "Zn+HCl": ["ZnCl2", "H2"], "Mg+HCl": ["MgCl2", "H2"], "Fe+CuSO4": ["FeSO4", "Cu"], "Zn+CuSO4": ["ZnSO4", "Cu"], "Cu+AgNO3": ["Cu(NO3)2", "Ag"],
+  "H2+O2": ["H2O"], "N2+H2": ["NH3"], "Na+Cl2": ["NaCl"], "Mg+O2": ["MgO"], "Fe+O2": ["Fe2O3"], "Al+O2": ["Al2O3"], "S+O2": ["SO2"], "C+O2": ["CO2"],
+  "CaO+H2O": ["Ca(OH)2"], "SO3+H2O": ["H2SO4"], "CO2+H2O": ["H2CO3"], "H2O2": ["H2O", "O2"], "CaCO3": ["CaO", "CO2"], "NaHCO3": ["Na2CO3", "H2O", "CO2"], "KClO3": ["KCl", "O2"],
+  "CH4+O2": ["CO2", "H2O"], "C2H6+O2": ["CO2", "H2O"], "C3H8+O2": ["CO2", "H2O"], "C4H10+O2": ["CO2", "H2O"], "C2H5OH+O2": ["CO2", "H2O"]
+};
+
+const SORTED_DB = {};
+for (const k in COMMON) SORTED_DB[k.split('+').sort().join('+')] = COMMON[k];
+
+function predictProducts(reactantString) {
+  const parts = reactantString.split('+').map(s => s.trim()).filter(Boolean);
+  if (!parts.length) throw new Error("Type at least one reactant, like CH4 + O2 or CaCO3.");
+  const key = parts.slice().sort().join('+');
+
+  if (SORTED_DB[key]) {
+    return { products: SORTED_DB[key], reason: "Matched a known reaction pattern in the database." };
+  }
+
+  if (parts.length === 2) {
+    const [a, b] = parts;
+    const isO2 = (s) => /^O2$/.test(s);
+    const isHydrocarbon = (s) => /^C\d*H\d*$/.test(s);
+    const isAlcohol = (s) => /^C\d*H\d*OH$/.test(s);
+    if ((isHydrocarbon(a) && isO2(b)) || (isHydrocarbon(b) && isO2(a))) {
+      return { products: ["CO2", "H2O"], reason: "Hydrocarbon combustion." };
+    }
+    if ((isAlcohol(a) && isO2(b)) || (isAlcohol(b) && isO2(a))) {
+      return { products: ["CO2", "H2O"], reason: "Alcohol combustion." };
+    }
+  }
+  return null;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function doBalance() {
+  const out = document.getElementById('out');
+  out.className = 'out on';
+  const eq = document.getElementById('eq').value.trim();
+  if (!eq) { out.className = 'out on err'; out.textContent = 'Type an equation first, or click an example below.'; return; }
+  try {
+    const r = balance(eq);
+    let html = '<h4>Balanced equation</h4><div class="big">' + esc(r.balanced) + '</div>';
+    html += '<h4>Atom check</h4><table><tr><th>Element</th><th>Left</th><th>Right</th><th>OK</th></tr>';
+    for (const el of r.elements) {
+      const l = r.reactants.reduce((s, x) => s + x.coeff * (x.comp[el] || 0), 0);
+      const rr = r.products.reduce((s, x) => s + x.coeff * (x.comp[el] || 0), 0);
+      html += '<tr><td>' + esc(el) + '</td><td>' + l + '</td><td>' + rr + '</td><td>' + (l === rr ? 'yes' : 'no') + '</td></tr>';
+    }
+    html += '</table><h4>Molar masses</h4><table><tr><th>Species</th><th>Coefficient</th><th>g/mol</th></tr>';
+    for (const x of r.reactants) html += '<tr><td>' + esc(x.formula) + '</td><td>' + x.coeff + '</td><td>' + x.mass.toFixed(3) + '</td></tr>';
+    for (const x of r.products) html += '<tr><td>' + esc(x.formula) + '</td><td>' + x.coeff + '</td><td>' + x.mass.toFixed(3) + '</td></tr>';
+    html += '</table>';
+    out.className = 'out on';
+    out.innerHTML = html;
+  } catch (e) {
+    out.className = 'out on err';
+    out.textContent = e.message;
+  }
+}
+
+function doPredict() {
+  const out = document.getElementById('pout');
+  out.className = 'out on';
+  const inp = document.getElementById('reactants').value.trim();
+  if (!inp) { out.className = 'out on err'; out.textContent = 'Type reactants first, or click an example below.'; return; }
+  try {
+    const r = predictProducts(inp);
+    if (!r) {
+      out.className = 'out on err';
+      out.textContent = "I could not match this reaction. Try a simpler set of reactants, or balance a known equation directly. Predicting works best for combustion, acid base reactions, single and double replacements, synthesis, and decomposition of carbonates, bicarbonates, and hydrogen peroxide.";
+      return;
+    }
+    const guess = inp + ' -> ' + r.products.join(' + ');
+    let html = '<h4>Likely products</h4><div class="big">' + esc(r.products.join(' + ')) + '</div>';
+    html += '<p style="color:#3a4053;font-family:system-ui,sans-serif;font-size:13px;margin:6px 0 10px">' + esc(r.reason) + '</p>';
+    html += '<h4>Try balancing</h4><div class="big">' + esc(guess) + '</div>';
+    html += '<p style="font-family:system-ui,sans-serif;font-size:13px"><button style="font-size:13px;padding:6px 12px;background:#fff;color:#0d8a66;border:1px solid #0d8a66" onclick="usePredicted(\'' + esc(guess).replace(/'/g, "\\'") + '\')">Send this to the balancer</button></p>';
+    out.className = 'out on';
+    out.innerHTML = html;
+  } catch (e) {
+    out.className = 'out on err';
+    out.textContent = e.message;
+  }
+}
+
+function usePredicted(text) {
+  document.getElementById('eq').value = text;
+  document.getElementById('balance').scrollIntoView({ behavior: 'smooth' });
+  doBalance();
+}
+
+function doMass() {
+  const out = document.getElementById('mout');
+  out.className = 'out on';
+  const f = document.getElementById('formula').value.trim();
+  if (!f) { out.className = 'out on err'; out.textContent = 'Type a formula first, like H2O or C6H12O6.'; return; }
+  try {
+    const r = analyze(f);
+    let html = '<h4>Molar mass of ' + esc(f) + '</h4><div class="big">' + r.mass.toFixed(3) + ' g/mol</div>';
+    html += '<table><tr><th>Element</th><th>Atoms</th><th>Atomic mass</th><th>Subtotal</th></tr>';
+    for (const el in r.comp) {
+      const c = r.comp[el];
+      html += '<tr><td>' + esc(el) + '</td><td>' + c + '</td><td>' + PT[el] + '</td><td>' + (PT[el] * c).toFixed(3) + '</td></tr>';
+    }
+    html += '</table>';
+    out.className = 'out on';
+    out.innerHTML = html;
+  } catch (e) {
+    out.className = 'out on err';
+    out.textContent = e.message;
+  }
+}
+
+function fillEq(el) { document.getElementById('eq').value = el.textContent; doBalance(); }
+function fillReact(el) { document.getElementById('reactants').value = el.textContent; doPredict(); }
+function fillFormula(el) { document.getElementById('formula').value = el.textContent; doMass(); }
+
+function renderPeriodic() {
+  const grid = document.getElementById('ptable');
+  const map = {};
+  ELEMENTS.forEach(e => { map[e[4] + '-' + e[5]] = e; });
+  for (let r = 1; r <= 8; r++) {
+    for (let c = 1; c <= 18; c++) {
+      const e = map[r + '-' + c];
+      const div = document.createElement('div');
+      if (e) {
+        div.className = 'el ' + e[3];
+        div.innerHTML = '<div class="num">' + e[0] + '</div><div class="sym">' + e[1] + '</div><div class="mass">' + e[2] + '</div>';
+        div.onclick = () => showElement(e);
+        div.title = e[6] + ' (' + e[1] + ')';
+      } else {
+        div.className = 'el empty';
+      }
+      grid.appendChild(div);
+    }
+  }
+}
+
+function showElement(e) {
+  const box = document.getElementById('selected');
+  box.className = 'selected-el on';
+  const mp = e[8] + ' °C';
+  const bp = e[9] + ' °C';
+  box.innerHTML =
+    '<div class="el-head"><div class="el-symbol">' + e[1] + '</div><div><div class="el-name">' + e[6] + '</div><div class="el-meta">Element #' + e[0] + ' · ' + e[7] + '</div></div></div>' +
+    '<div class="el-stats">' +
+      '<div><span class="k">Atomic mass</span><span class="v">' + e[2] + ' g/mol</span></div>' +
+      '<div><span class="k">Melting point</span><span class="v">' + mp + '</span></div>' +
+      '<div><span class="k">Boiling point</span><span class="v">' + bp + '</span></div>' +
+      '<div><span class="k">Density</span><span class="v">' + e[10] + ' g/cm³</span></div>' +
+    '</div>' +
+    '<p class="el-desc">' + e[11] + '</p>' +
+    '<div class="el-actions"><button type="button" class="el-insert" id="insert-btn">Add ' + e[1] + ' to formula</button><button type="button" class="el-close" id="close-btn">Close</button></div>';
+  document.getElementById('insert-btn').onclick = () => {
+    const f = document.getElementById('formula');
+    f.value += e[1];
+    f.focus();
+    const btn = document.getElementById('insert-btn');
+    btn.textContent = 'Added ' + e[1];
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = 'Add ' + e[1] + ' to formula'; btn.disabled = false; }, 900);
+  };
+  document.getElementById('close-btn').onclick = () => {
+    box.className = 'selected-el';
+    box.innerHTML = '';
+  };
+}
+
+/* ==========================================
+   2. NEW STUDY HUB & GENERATOR
+   ========================================== */
+let currentTopic = 'stoich';
+
+const STUDY_DB = {
+  stoich: {
+    videos: [
+      { id: "RXc7_Xr2q5k", title: "Stoichiometry: Chemistry's Math (Crash Course)" },
+      { id: "7Cfq0ilw7ps", title: "Stoichiometry Basic Introduction" },
+      { id: "KSg8m_ZqK_U", title: "Mole Conversions Made Easy" }
+    ]
+  },
+  balance: {
+    videos: [
+      { id: "RnGu3xO2h74", title: "How to Balance Chemical Equations (Tyler DeWitt)" },
+      { id: "ISyH1aB69y0", title: "Balancing Chemical Equations Practice" },
+      { id: "fCqY2D8L9p4", title: "Balancing Complex Chemical Equations" }
+    ]
+  },
+  bonds: {
+    videos: [
+      { id: "QXT4OeEDc3M", title: "Atomic Hook-Ups - Types of Chemical Bonds" },
+      { id: "vJ2Vz6V5Tks", title: "Ionic vs. Covalent Bonds (Tyler DeWitt)" },
+      { id: "aJ4H9J6jF5E", title: "Lewis Dot Structures and Bonding" }
+    ]
+  },
+  atomic: {
+    videos: [
+      { id: "thnDxFdkzZs", title: "The Nucleus: Crash Course Chemistry #1" },
+      { id: "FSyAehMdpyI", title: "Atomic Structure and Isotopes" },
+      { id: "c2Q6C1eP2x8", title: "Electron Configuration Basics" }
+    ]
+  },
+  acid_base: {
+    videos: [
+      { id: "tVp2S4J8fCo", title: "Acids, Bases, and pH (Crash Course)" },
+      { id: "sFqT9XqD7Z8", title: "Acid-Base Titration Calculations" },
+      { id: "H0l3V9n5M2Q", title: "Strong vs Weak Acids and Bases" }
+    ]
+  },
+  thermo: {
+    videos: [
+      { id: "2M4F7sG8h9Q", title: "Energy & Chemistry (Crash Course)" },
+      { id: "9rY7XqD8s6M", title: "Enthalpy: Crash Course Chemistry #18" },
+      { id: "8J1sK9l2M3Q", title: "Endothermic vs Exothermic Reactions" }
+    ]
+  }
+};
+
+function getTopicKey(input) {
+  const lower = input.toLowerCase();
+  if (lower.includes('bond') || lower.includes('ionic') || lower.includes('covalent') || lower.includes('lewis')) return 'bonds';
+  if (lower.includes('atom') || lower.includes('proton') || lower.includes('neutron') || lower.includes('electron') || lower.includes('isotope')) return 'atomic';
+  if (lower.includes('acid') || lower.includes('base') || lower.includes('ph') || lower.includes('titration')) return 'acid_base';
+  if (lower.includes('thermo') || lower.includes('energy') || lower.includes('enthalpy') || lower.includes('heat')) return 'thermo';
+  if (lower.includes('balance') || lower.includes('equation') || lower.includes('reaction')) return 'balance';
+  return 'stoich'; 
+}
+
+// Shuffles an array in place
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function getRandomQuestion(topic) {
+  let pool = [];
+  
+  if (topic === 'bonds') {
+    pool = [
+      { q: "What type of bond involves the sharing of electrons?", options: ["Covalent", "Ionic", "Metallic", "Hydrogen"], a: 0 },
+      { q: "What type of bond involves the transfer of electrons?", options: ["Ionic", "Covalent", "Metallic", "Hydrogen"], a: 0 },
+      { q: "Which of these is a property of ionic compounds?", options: ["High melting point", "Low melting point", "Poor conductivity when dissolved", "They are gases at room temp"], a: 0 },
+      { q: "Which of these is a property of covalent compounds?", options: ["Low melting point", "High melting point", "Conduct electricity in water", "Form crystals"], a: 0 },
+      { q: "Metallic bonds are formed by:", options: ["A sea of delocalized electrons", "Sharing of protons", "Transfer of neutrons", "Hydrogen bonding"], a: 0 },
+      { q: "What is the most electronegative element?", options: ["Fluorine", "Oxygen", "Chlorine", "Nitrogen"], a: 0 }
+    ];
+  } else if (topic === 'stoich') {
+    const mols = [
+      { f: "H2O", m: "18.02" }, { f: "CO2", m: "44.01" }, { f: "CH4", m: "16.04" }, 
+      { f: "NaCl", m: "58.44" }, { f: "C6H12O6", m: "180.16" }, { f: "O2", m: "32.00" },
+      { f: "N2", m: "28.02" }, { f: "NH3", m: "17.03" }, { f: "H2SO4", m: "98.08" }
+    ];
+    const pick = mols[Math.floor(Math.random() * mols.length)];
+    const type = Math.random();
+    
+    if (type < 0.33) {
+      pool.push({ q: `What is the molar mass of ${pick.f}?`, options: [`${pick.m} g/mol`, "100.00 g/mol", "22.40 g/mol", "50.00 g/mol"], a: 0 });
+    } else if (type < 0.66) {
+      pool.push({ q: `If you have 1 mole of ${pick.f}, how many grams do you have?`, options: [`${pick.m} grams`, "1 gram", "6.022x10^23 grams", "22.4 grams"], a: 0 });
+    } else {
+      pool.push({ q: `How many representative particles are in 1 mole of ${pick.f}?`, options: ["6.022 × 10²³", "1.00", "22.4", "100.00"], a: 0 });
+    }
+  } else if (topic === 'balance') {
+    const rxns = [
+      { eq: "H2 + O2 -> H2O", ans: "2 H2 + O2 -> 2 H2O" }, 
+      { eq: "CH4 + O2 -> CO2 + H2O", ans: "CH4 + 2 O2 -> CO2 + 2 H2O" },
+      { eq: "Fe + O2 -> Fe2O3", ans: "4 Fe + 3 O2 -> 2 Fe2O3" },
+      { eq: "Al + O2 -> Al2O3", ans: "4 Al + 3 O2 -> 2 Al2O3" },
+      { eq: "KClO3 -> KCl + O2", ans: "2 KClO3 -> 2 KCl + 3 O2" },
+      { eq: "Na + Cl2 -> NaCl", ans: "2 Na + Cl2 -> 2 NaCl" },
+      { eq: "C3H8 + O2 -> CO2 + H2O", ans: "C3H8 + 5 O2 -> 3 CO2 + 4 H2O" },
+      { eq: "N2 + H2 -> NH3", ans: "N2 + 3 H2 -> 2 NH3" }
+    ];
+    const pick = rxns[Math.floor(Math.random() * rxns.length)];
+    pool.push({ q: `Which is the correctly balanced equation for: ${pick.eq}?`, options: [pick.ans, "It is already balanced", "2 " + pick.eq, "3 " + pick.eq], a: 0 });
+  } else if (topic === 'acid_base') {
+    pool = [
+      { q: "What is the pH of a neutral solution at 25°C?", options: ["7", "0", "14", "1"], a: 0 },
+      { q: "An Arrhenius acid produces what in water?", options: ["H+ ions", "OH- ions", "Electrons", "Oxygen gas"], a: 0 },
+      { q: "A reaction between an acid and a base produces water and a:", options: ["Salt", "Gas", "Metal", "Precipitate"], a: 0 },
+      { q: "Which of the following is a strong acid?", options: ["HCl", "CH3COOH", "H2CO3", "HF"], a: 0 },
+      { q: "If pH = 3, the solution is:", options: ["Acidic", "Basic", "Neutral", "Impossible"], a: 0 },
+      { q: "A Brønsted-Lowry base is a proton:", options: ["Acceptor", "Donor", "Neutralizer", "Creator"], a: 0 }
+    ];
+  } else if (topic === 'atomic') {
+    pool = [
+      { q: "Which subatomic particle has a positive charge?", options: ["Proton", "Neutron", "Electron", "Positron"], a: 0 },
+      { q: "Which subatomic particle determines the element's identity?", options: ["Proton", "Neutron", "Electron", "Ion"], a: 0 },
+      { q: "Where are electrons located in an atom?", options: ["In the electron cloud", "In the nucleus", "Inside protons", "Inside neutrons"], a: 0 },
+      { q: "What is the mass number of an atom with 6 protons and 7 neutrons?", options: ["13", "6", "7", "12"], a: 0 },
+      { q: "Isotopes of an element have different numbers of:", options: ["Neutrons", "Protons", "Electrons", "Orbitals"], a: 0 },
+      { q: "Which particle has no charge?", options: ["Neutron", "Proton", "Electron", "Ion"], a: 0 }
+    ];
+  } else if (topic === 'thermo') {
+    pool = [
+      { q: "A reaction that releases heat is called:", options: ["Exothermic", "Endothermic", "Isothermal", "Adiabatic"], a: 0 },
+      { q: "If a reaction feels cold to the touch, it is:", options: ["Endothermic", "Exothermic", "Spontaneous", "At equilibrium"], a: 0 },
+      { q: "The symbol ΔH represents the change in:", options: ["Enthalpy", "Entropy", "Free energy", "Temperature"], a: 0 },
+      { q: "Which process absorbs energy from the surroundings?", options: ["Endothermic", "Exothermic", "Combustion", "Condensation"], a: 0 }
+    ];
+  }
+  
+  const qObj = pool[Math.floor(Math.random() * pool.length)];
+  const correct = qObj.options[qObj.a];
+  const distractors = qObj.options.filter((_, idx) => idx !== qObj.a);
+  
+  // Shuffle distractors
+  shuffleArray(distractors);
+  
+  // Insert correct at random index
+  const insertAt = Math.floor(Math.random() * 4);
+  distractors.splice(insertAt, 0, correct);
+  
+  return { q: qObj.q, options: distractors, a: insertAt };
+}
+
+function generateStudyMaterials() {
+  const input = document.getElementById('notes-input').value;
+  const resultsDiv = document.getElementById('study-results');
+  
+  if (!input.trim()) {
+    resultsDiv.innerHTML = '<div class="placeholder-text" style="color:#b8431c">Please enter a topic first.</div>';
+    return;
+  }
+
+  resultsDiv.innerHTML = '<div class="placeholder-text">Searching for study materials...</div>';
+
+  setTimeout(() => {
+    currentTopic = getTopicKey(input);
+    const data = STUDY_DB[currentTopic];
+
+    resultsDiv.innerHTML = `
+      <div>
+        <h3 style="margin-top:0">Recommended Videos</h3>
+        ${data.videos.map(v => `
+          <div class="video-card">
+            <iframe src="https://www.youtube.com/embed/${v.id}?rel=0" allowfullscreen></iframe>
+            <div class="video-title">${v.title}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h3 style="margin:0;">Practice Worksheet</h3>
+          <button onclick="regenerateQuestions()" style="padding: 6px 12px; font-size: 13px;">Generate New</button>
+        </div>
+        <div id="questions-container"></div>
+      </div>
+    `;
+    
+    generateQuestionsForTopic();
+  }, 600);
+}
+
+function regenerateQuestions() {
+  generateQuestionsForTopic();
+}
+
+function generateQuestionsForTopic() {
+  const container = document.getElementById('questions-container');
+  if (!container) return;
+  
+  let html = '';
+  for (let i = 0; i < 3; i++) {
+    const qObj = getRandomQuestion(currentTopic);
+    const qId = `q-${Date.now()}-${i}`;
+    
+    html += `
+      <div class="practice-card">
+        <h4>Problem ${i + 1}</h4>
+        <div class="practice-q">${qObj.q}</div>
+        <div class="practice-options" id="${qId}">
+          ${qObj.options.map((opt, optIndex) => `<button onclick="checkAnswer(${optIndex}, ${qObj.a}, '${qId}', '${qId}-feedback', this)">${opt}</button>`).join('')}
+        </div>
+        <div id="${qId}-feedback" style="margin-top: 16px; font-weight: 600; min-height: 24px;"></div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+function checkAnswer(selectedIndex, correctIndex, containerId, feedbackId, btnElement) {
+  const feedback = document.getElementById(feedbackId);
+  const buttons = document.querySelectorAll(`#${containerId} button`);
+  
+  buttons.forEach(b => {
+    b.style.background = '#fff';
+    b.style.borderColor = '#d8dee8';
+    b.style.color = '#1c2029';
+  });
+
+  if (selectedIndex === correctIndex) {
+    btnElement.style.background = '#eef8f4';
+    btnElement.style.borderColor = '#0d8a66';
+    btnElement.style.color = '#0a7054';
+    feedback.textContent = 'Correct!';
+    feedback.style.color = '#0a7054';
+  } else {
+    btnElement.style.background = '#fdf3f0';
+    btnElement.style.borderColor = '#f4d3c6';
+    btnElement.style.color = '#8a3a1c';
+    feedback.textContent = 'Not quite. Try again.';
+    feedback.style.color = '#8a3a1c';
+  }
+}
+
+
+/* Stoichio 2.0 learning library and practice engine. All content runs locally. */
+const LESSONS = {
+ atomic:{title:'Atomic structure',intro:'Atoms contain a tiny nucleus of protons and neutrons, surrounded by electrons in orbitals.',notes:['Atomic number (Z) is the number of protons. It identifies the element.','Mass number (A) is protons + neutrons; neutrons = A − Z.','Neutral atoms have equal numbers of protons and electrons.','Ions form when electrons are gained (negative) or lost (positive).','Isotopes have the same proton number but different neutron numbers.'],worked:'An atom has Z = 11 and A = 23. It contains 11 protons, 12 neutrons and, if neutral, 11 electrons.',questions:[['An atom has 8 protons and 10 neutrons. Its mass number is…','18','8','10','2','Mass number = protons + neutrons = 18.','easy'],['A neutral atom has 17 protons. How many electrons?','17','18','16','34','In a neutral atom, the electron and proton counts are equal.','easy'],['A 2+ ion has 12 protons. How many electrons?','10','12','14','24','A 2+ charge means two electrons were lost: 12 − 2 = 10.','medium'],['Which pair represents isotopes of the same element?','¹²C and ¹⁴C','¹²C and ¹⁴N','¹⁴N and ¹⁶O','²³Na and ²⁴Mg','Isotopes share the same proton number but have different neutron numbers.','medium'],['An ion has 16 protons, 18 electrons and 18 neutrons. Its charge is…','2−','2+','0','1−','Two more electrons than protons gives a net 2− charge.','hard']]},
+ bonds:{title:'Chemical bonding',intro:'Bonding describes how atoms interact through their outer electrons.',notes:['Ionic bonding involves electrostatic attraction between oppositely charged ions.','Covalent bonds are formed when atoms share electron pairs.','Metallic bonding involves positive metal ions and delocalised electrons.','Ionic compounds often conduct when molten or dissolved, but not as solids.','Molecular covalent substances often have relatively low melting points; network covalent solids can have very high melting points.'],worked:'Magnesium loses two electrons to form Mg²⁺; two chlorine atoms each gain one electron to form Cl⁻. The formula is MgCl₂.',questions:[['Which bond involves sharing electron pairs?','Covalent','Ionic','Metallic','Hydrogen','A covalent bond is a shared pair of electrons.','easy'],['What is the formula of magnesium chloride?','MgCl₂','Mg₂Cl','MgCl','Mg₂Cl₃','Mg²⁺ needs two Cl⁻ ions for overall neutrality.','medium'],['Why can molten sodium chloride conduct electricity?','Its ions are mobile','It contains free electrons','Its molecules move','Its protons are mobile','Molten ionic compounds have mobile charged ions.','medium'],['Which substance has a giant covalent network?','Diamond','Water','Methane','Oxygen','Diamond contains a continuous three-dimensional network of covalent bonds.','hard'],['What holds metal atoms together?','Attraction to delocalised electrons','Shared proton pairs','Neutral molecules','Hydrogen bonds only','Metallic bonding is electrostatic attraction between metal cations and delocalised electrons.','hard']]},
+ balance:{title:'Balancing equations',intro:'Chemical reactions rearrange atoms; they do not create or destroy them.',notes:['Count the atoms of every element on each side of the arrow.','Change coefficients in front of formulas, never subscripts within a formula.','Balance elements that appear in fewer compounds first.','Recount all atoms and reduce coefficients to the smallest whole-number ratio.'],worked:'H₂ + O₂ → H₂O. Put 2 before H₂O to balance oxygen, then 2 before H₂ to balance hydrogen: 2H₂ + O₂ → 2H₂O.',questions:[['What can you change when balancing an equation?','Coefficients','Subscripts','Element symbols','Charges arbitrarily','Coefficients change molecule counts without changing chemical identities.','easy'],['Balance: Na + Cl₂ → NaCl','2Na + Cl₂ → 2NaCl','Na + Cl₂ → NaCl','Na + 2Cl₂ → NaCl','2Na + 2Cl₂ → NaCl','Two sodium atoms are needed for one Cl₂ molecule.','medium'],['Balance: Fe + O₂ → Fe₂O₃','4Fe + 3O₂ → 2Fe₂O₃','2Fe + O₂ → Fe₂O₃','Fe + 3O₂ → Fe₂O₃','4Fe + 2O₂ → 2Fe₂O₃','Four Fe atoms and six O atoms appear on both sides.','hard'],['Balance: CH₄ + O₂ → CO₂ + H₂O','CH₄ + 2O₂ → CO₂ + 2H₂O','CH₄ + O₂ → CO₂ + H₂O','2CH₄ + O₂ → CO₂ + H₂O','CH₄ + 3O₂ → CO₂ + H₂O','One C, four H and four O atoms appear on each side.','medium'],['How many oxygen atoms are on the left in 3O₂?','6','3','2','9','Three O₂ molecules each contain two oxygen atoms.','easy']]},
+ stoich:{title:'Moles and stoichiometry',intro:'The mole connects the number of particles in a sample to its measurable mass.',notes:['One mole contains approximately 6.022 × 10²³ specified entities.','Molar mass (M) is measured in g/mol. Amount n = mass m ÷ molar mass M.','A balanced equation gives mole ratios between reactants and products.','Convert mass to moles, use the mole ratio, then convert to the required unit.','A limiting reactant is used up first and determines the maximum product amount.'],worked:'For 36.0 g H₂O, using M ≈ 18.0 g/mol, n = 36.0 ÷ 18.0 = 2.00 mol.',questions:[['How many particles are in approximately 1 mole?','6.022 × 10²³','3.011 × 10²³','1.00 × 10²³','6.022 × 10²²','Avogadro’s constant is approximately 6.022 × 10²³ mol⁻¹.','easy'],['How many moles are in 36 g of water (M = 18 g/mol)?','2 mol','0.5 mol','18 mol','648 mol','n = m/M = 36/18 = 2 mol.','medium'],['What is the molar mass of CO₂ (C=12, O=16)?','44 g/mol','28 g/mol','32 g/mol','16 g/mol','12 + 2(16) = 44 g/mol.','easy'],['For 2H₂ + O₂ → 2H₂O, 3 mol O₂ with excess H₂ produces…','6 mol H₂O','3 mol H₂O','2 mol H₂O','1.5 mol H₂O','The mole ratio O₂:H₂O is 1:2.','medium'],['For N₂ + 3H₂ → 2NH₃, 2 mol N₂ and 3 mol H₂ produce at most…','2 mol NH₃','4 mol NH₃','3 mol NH₃','6 mol NH₃','H₂ is limiting: 3 mol H₂ produces 2 mol NH₃.','hard']]},
+ acid_base:{title:'Acids, bases and pH',intro:'Acid–base chemistry describes proton transfer and changes in solution acidity.',notes:['A Brønsted–Lowry acid donates H⁺; a base accepts H⁺.','At 25 °C, neutral water has pH 7; acidic solutions have pH below 7.','pH = −log₁₀[H₃O⁺], with concentration in mol/L.','A decrease of one pH unit corresponds to a tenfold increase in hydronium concentration.','Acid–base neutralisation often forms a salt and water; exact products depend on the reactants.'],worked:'If [H₃O⁺] = 1 × 10⁻³ mol/L, pH = −log₁₀(10⁻³) = 3.',questions:[['At 25 °C, neutral water has pH…','7','0','14','3','Neutral water has pH 7 at 25 °C.','easy'],['A Brønsted–Lowry base…','Accepts a proton','Donates a proton','Donates a neutron','Accepts an electron only','A Brønsted–Lowry base is a proton acceptor.','easy'],['A solution changes from pH 5 to pH 3. [H₃O⁺] increases by…','100 times','2 times','10 times','1000 times','A two-unit pH decrease corresponds to a 10²-fold increase.','medium'],['If [H₃O⁺] = 10⁻⁴ mol/L, pH is…','4','10','−4','0.0001','pH = −log₁₀(10⁻⁴) = 4.','medium'],['Which is the conjugate base of H₂SO₄ after donating one proton?','HSO₄⁻','SO₄²⁻','H₃SO₄⁺','H₂O','Removing one H⁺ from H₂SO₄ forms HSO₄⁻.','hard']]},
+ thermo:{title:'Energetics',intro:'Energy changes accompany chemical reactions and physical changes.',notes:['Exothermic reactions release heat to the surroundings; ΔH is negative at constant pressure.','Endothermic processes absorb heat from the surroundings; ΔH is positive.','Breaking bonds requires energy; forming bonds releases energy.','Approximate reaction enthalpy = energy to break bonds − energy released forming bonds.','For heating without a phase change, q = mcΔT.'],worked:'Heating 100 g of water by 5 °C (c = 4.18 J g⁻¹ °C⁻¹) requires q = 100 × 4.18 × 5 = 2090 J.',questions:[['An exothermic reaction has ΔH…','Negative','Positive','Always zero','Undefined','Exothermic reactions release heat, so the system’s enthalpy decreases.','easy'],['Bond breaking generally…','Requires energy','Releases energy','Creates atoms','Always lowers temperature','Energy must be supplied to separate bonded atoms.','easy'],['Calculate q for 50 g water heated by 10 °C (c=4.2 J/g°C).','2100 J','210 J','500 J','4200 J','q = mcΔT = 50 × 4.2 × 10 = 2100 J.','medium'],['If bond breaking takes 800 kJ and bond formation releases 950 kJ, ΔH ≈…','−150 kJ','+150 kJ','+1750 kJ','−1750 kJ','ΔH ≈ 800 − 950 = −150 kJ.','hard'],['Which change is endothermic?','Melting ice','Freezing water','Condensing steam','Depositing frost','Melting requires energy input to overcome intermolecular attractions.','medium']]}
+};
+let quizQuestions=[], quizIndex=0, quizScore=0, quizAnswered=false;
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name+'-view'));window.scrollTo({top:0,behavior:'smooth'});if(name==='periodic')document.getElementById('ptable').style.minWidth='0';}
+
+const EXPANDED_NOTES = {"atomic": ["Inside an atom", "An atom has a central nucleus containing positively charged protons and neutral neutrons. Negatively charged electrons occupy regions called orbitals around the nucleus. Nearly all of the atom’s mass is concentrated in its nucleus, while most of its volume is the surrounding electron cloud. The attraction between positive nuclei and negative electrons helps hold atoms together.", "Atomic number, mass number and ions", "Atomic number Z counts protons, and therefore determines which element an atom is. Mass number A counts protons plus neutrons in a particular atom; it is not the same as the average atomic mass on a periodic table. A neutral atom has as many electrons as protons. When an atom loses electrons, it becomes a positive ion (cation); gaining electrons makes a negative ion (anion). The nucleus normally does not change when an ion forms.", "Isotopes and electron arrangement", "Isotopes of the same element have identical proton numbers but different neutron numbers. They generally have similar chemical behaviour because their electron arrangements are similar, although their masses differ. Electrons occupy energy levels and orbitals rather than travelling in fixed planetary paths. The outermost electrons are especially important in chemical reactions.", "Example: sodium-23", "Sodium-23 has atomic number 11 and mass number 23. Protons = 11; neutrons = 23 − 11 = 12. A neutral sodium atom has 11 electrons. A Na⁺ ion still has 11 protons and 12 neutrons, but only 10 electrons because one electron has been lost."], "bonds": ["Why atoms bond", "Chemical bonds involve interactions between positively charged nuclei and electrons. Bonding can lead to arrangements that are energetically more stable. The way electrons are shared or transferred helps explain the structure, properties and behaviour of substances. The familiar octet rule is a useful beginner model, not a universal law.", "Ionic and covalent bonding", "Ionic compounds contain positive and negative ions held together by electrostatic attraction in a lattice. They are not made of separate little ionic molecules. Covalent bonds form when atoms share electron pairs. A simple molecular substance contains discrete molecules; a giant covalent structure, such as diamond or silicon dioxide, has a continuous network of bonds.", "Metallic bonding and properties", "Metals contain positive metal centres attracted to mobile, delocalised electrons. This helps explain why many metals conduct electricity and can be shaped without immediately breaking. Ionic solids cannot usually conduct because their ions are fixed in place; molten ionic substances and suitable aqueous solutions can conduct because ions can move. Simple molecular substances often melt at lower temperatures than giant covalent networks, but there are exceptions.", "Example: magnesium chloride", "Magnesium commonly forms Mg²⁺ by losing two electrons. Each chlorine atom can gain one electron to form Cl⁻. Two chloride ions balance one magnesium ion, so the empirical formula is MgCl₂. The charges add to zero: +2 + 2(−1) = 0."], "balance": ["Conservation of atoms", "In an ordinary chemical reaction, atoms are rearranged into new combinations. The number of atoms of each element must therefore be the same on both sides of a correctly balanced equation. The formulas tell you which substances are present; the coefficients tell you their relative amounts.", "Coefficients versus subscripts", "A subscript is part of a chemical formula: H₂O has two hydrogen atoms per water molecule. A coefficient multiplies the entire formula: 3H₂O contains six hydrogen atoms and three oxygen atoms. Never change subscripts just to balance an equation, because that would change the identity of a substance.", "A reliable balancing method", "Write the correct reactant and product formulas first. Count each element on both sides. Adjust one coefficient at a time, usually leaving hydrogen and oxygen until later if they appear in several substances. Recount after each change, because adjusting one coefficient can affect several elements. Finish with the smallest whole-number coefficients and verify every element.", "Example: iron oxide", "Start with Fe + O₂ → Fe₂O₃. Oxygen occurs in groups of 2 on the left and 3 on the right. Use 3O₂ and 2Fe₂O₃ to get six oxygen atoms on each side. The products now contain four iron atoms, so place 4 before Fe. Final equation: 4Fe + 3O₂ → 2Fe₂O₃. Check: Fe 4 = 4, O 6 = 6."], "stoich": ["What a mole means", "A mole is a counting unit, just as a dozen means twelve. One mole contains exactly 6.02214076 × 10²³ specified entities, which may be atoms, molecules, ions or other particles. The mole allows chemists to connect quantities of microscopic particles with masses measurable in the laboratory. Always state what particles you mean.", "Mass, amount and molar mass", "Molar mass M is the mass of one mole of a substance, usually expressed in g/mol. The relationship n = m/M connects amount n (mol), sample mass m (g) and molar mass M (g/mol). Rearranging gives m = nM. Calculate a compound’s molar mass by adding the atomic masses of all atoms shown in its formula.", "Using mole ratios", "A balanced equation provides ratios in moles, not directly in grams. For example, 2H₂ + O₂ → 2H₂O means two moles of hydrogen react with one mole of oxygen to produce two moles of water. For a mass-to-mass problem: balance the equation, convert the given mass to moles, apply the coefficient ratio, then convert the result back to grams.", "Limiting reactants and yield", "If two reactants are supplied, one may run out first. That limiting reactant determines the maximum theoretical amount of product. To identify it, calculate how much product each reactant could make and use the smaller result. Actual yield can be lower because reactions may be incomplete or product can be lost. Percentage yield = (actual yield ÷ theoretical yield) × 100%.", "Example: mass to mass", "For 2H₂ + O₂ → 2H₂O, suppose 4.0 g H₂ reacts with excess oxygen. Using M(H₂) ≈ 2.0 g/mol, n(H₂) = 4.0/2.0 = 2.0 mol. The 2:2 ratio gives 2.0 mol H₂O. With M(H₂O) ≈ 18.0 g/mol, the theoretical mass of water is 2.0 × 18.0 = 36 g."], "acid_base": ["What acids and bases do", "In the Brønsted–Lowry model, an acid donates a proton (H⁺), while a base accepts a proton. When an acid donates H⁺ it becomes its conjugate base; when a base accepts H⁺ it becomes its conjugate acid. Water can act as either an acid or a base depending on the reaction.", "Understanding pH", "pH indicates acidity on a logarithmic scale. For dilute aqueous solutions, pH is commonly calculated as −log₁₀[H₃O⁺], using hydronium concentration in mol/L. A difference of one pH unit corresponds to a factor of ten in hydronium concentration. At 25 °C, neutral water has pH 7; this neutral value changes with temperature.", "Strong versus concentrated", "Strong and weak describe the extent to which an acid or base ionises in water, not how much is present. Concentrated and dilute describe the amount of dissolved substance relative to solution volume. A dilute strong acid and a concentrated weak acid are therefore different concepts. Avoid treating pH as a simple measure of acid strength alone.", "Neutralisation and indicators", "An acid reacting with a base may produce water and a salt, depending on the reactants. For example, HCl + NaOH → NaCl + H₂O. Indicators change colour over particular pH ranges and help reveal acidity or endpoints in titrations. They do not directly measure the number of moles without additional information.", "Example: pH change", "If [H₃O⁺] = 1 × 10⁻³ mol/L, then pH = 3. If the concentration falls to 1 × 10⁻⁵ mol/L, pH rises to 5. This two-unit increase means hydronium concentration has decreased by a factor of 100."], "thermo": ["Energy in chemical reactions", "Chemical reactions involve energy transfers as old bonds are broken and new bonds form. Breaking bonds requires energy, while forming bonds releases energy. The overall energy change depends on the balance between these processes, not on whether any single bond is strong or weak.", "Exothermic and endothermic", "An exothermic process transfers heat from the system to its surroundings; at constant pressure, its enthalpy change ΔH is negative. An endothermic process absorbs heat from the surroundings and has positive ΔH. Burning fuel is commonly exothermic, whereas melting ice requires heat input and is endothermic.", "Heating and calorimetry", "For a substance heated without a phase change, q = mcΔT, where q is heat energy (J), m is mass (g), c is specific heat capacity (J g⁻¹ °C⁻¹), and ΔT is final temperature minus initial temperature. Keep units consistent. During a phase change, temperature can remain constant even while energy is transferred, so this simple formula alone is not enough.", "Reaction enthalpy and bond energies", "A rough estimate of reaction enthalpy can be found from the energy required to break reactant bonds minus the energy released when product bonds form. Average bond enthalpies give estimates, often for gaseous species; they are not exact measurements for every reaction condition.", "Example: heating water", "A 100 g sample of water warms from 20 °C to 25 °C. Its temperature change is 5 °C. With c = 4.18 J g⁻¹ °C⁻¹, q = 100 × 4.18 × 5 = 2090 J = 2.09 kJ. The positive value represents heat absorbed by the water."]};
+function setupLearning(){const keys=Object.keys(LESSONS);document.getElementById('topic-cards').innerHTML=keys.map(k=>`<button class="nav-card" onclick="openLesson('${k}')"><strong>${esc(LESSONS[k].title)}</strong><span>Learn · See examples · Practise</span></button>`).join('');document.getElementById('quiz-topic').innerHTML=keys.map(k=>`<option value="${k}">${esc(LESSONS[k].title)}</option>`).join('');}
+function openLesson(k){const l=LESSONS[k], sections=EXPANDED_NOTES[k]||[];const detail=Array.from({length:sections.length/2},(_,i)=>`<section class="note-section"><h3>${esc(sections[2*i])}</h3><p>${esc(sections[2*i+1])}</p></section>`).join('');document.getElementById('lesson-content').innerHTML=`<article class="lesson"><h2>${esc(l.title)}</h2><p class="lesson-intro">${esc(l.intro)}</p><h3>What you need to know</h3><ul>${l.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul><h2>Understanding the topic</h2>${detail}${k==='atomic'?atomicVisual():''}${k==='bonds'?bondingInteractive():''}${k==='balance'?balancingVisual():''}${k==='thermo'?energyVisual():''}${k==='stoich'?stoichVisual():''}${k==='acid_base'?acidVisual():''}<h3>Worked example</h3><div class="worked">${esc(l.worked)}</div><div class="study-controls"><button onclick="practiceLesson('${k}')">Practise this topic</button><button onclick="showView('tools')">Open chemistry tools</button></div></article>`;if(k==='atomic')renderAtomicVisual();if(k==='bonds')renderBond();if(k==='balance')renderBalanceVisual();if(k==='thermo')renderEnergyVisual();if(k==='stoich')renderStoichVisual();if(k==='acid_base')renderAcidVisual();document.getElementById('lesson-content').scrollIntoView({behavior:'smooth',block:'start'});}
+
+
+/* Atomic structure: schematic shell diagrams for introductory learning. */
+let atomElement='carbon',atomMode='neutral';
+const ATOM_MODELS={carbon:{symbol:'C',name:'Carbon',protons:6,neutrons:6,shells:[2,4]},sodium:{symbol:'Na',name:'Sodium',protons:11,neutrons:12,shells:[2,8,1]},chlorine:{symbol:'Cl',name:'Chlorine',protons:17,neutrons:18,shells:[2,8,7]}};
+function atomicVisual(){return `<section class="visual-lab"><h3>Explore the atom</h3><p>Choose an element and see how its protons, neutrons and electrons are arranged in a simplified shell model. Change the particle counts to explore ions and isotopes.</p><div class="visual-tabs"><button onclick="setAtomicElement('carbon')" id="atom-carbon">Carbon</button><button onclick="setAtomicElement('sodium')" id="atom-sodium">Sodium</button><button onclick="setAtomicElement('chlorine')" id="atom-chlorine">Chlorine</button></div><div class="visual-tabs"><button onclick="setAtomicMode('neutral')" id="atom-neutral">Neutral atom</button><button onclick="setAtomicMode('ion')" id="atom-ion">Form an ion</button><button onclick="setAtomicMode('isotope')" id="atom-isotope">Change isotope</button></div><div class="visual-canvas" id="atomic-canvas"></div><p class="visual-caption" id="atomic-caption" aria-live="polite"></p></section>`}
+function setAtomicElement(k){atomElement=k;atomMode='neutral';renderAtomicVisual()}
+function setAtomicMode(k){atomMode=k;renderAtomicVisual()}
+function renderAtomicVisual(){const el=document.getElementById('atomic-canvas');if(!el)return;const a=ATOM_MODELS[atomElement];let electrons=a.protons,neutrons=a.neutrons;let message='A neutral atom has the same number of electrons as protons, so its overall charge is zero.';
+if(atomMode==='ion'){electrons=a.protons+(atomElement==='chlorine'?1:-1);message=atomElement==='chlorine'?'Chlorine gains one electron to form Cl⁻. Its 17 protons stay unchanged.':'The atom loses one electron and becomes a positive ion. Its nucleus stays unchanged.'}
+if(atomMode==='isotope'){neutrons++;message='Changing the number of neutrons creates a different isotope of the same element. The number of protons—and therefore the element—does not change.'}
+const counts=electrons===a.protons?a.shells.slice():(electrons===a.protons-1?(()=>{let z=a.shells.slice();z[z.length-1]--;if(z[z.length-1]===0)z.pop();return z})():[2,8,8]);const cx=215,cy=150;let drawing='';counts.forEach((count,i)=>{const r=46+i*43;drawing+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#9cbcb2" stroke-width="1.5" stroke-dasharray="4 4"/>`;for(let j=0;j<count;j++){const angle=-Math.PI/2+j*2*Math.PI/count;drawing+=`<circle cx="${(cx+r*Math.cos(angle)).toFixed(2)}" cy="${(cy+r*Math.sin(angle)).toFixed(2)}" r="6" fill="#cf9139" stroke="#fff" stroke-width="1.5"/>`}});
+const charge=a.protons-electrons;const label=charge===0?a.symbol:a.symbol+(Math.abs(charge)===1?'':Math.abs(charge))+(charge>0?'⁺':'⁻');
+el.innerHTML=`<svg viewBox="0 0 430 335" role="img" aria-label="Simplified shell diagram of ${a.name} with ${a.protons} protons, ${neutrons} neutrons and ${electrons} electrons"><circle cx="${cx}" cy="${cy}" r="34" fill="#dbeee6" stroke="#41846e" stroke-width="2"/>${drawing}<text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="17" font-weight="700" fill="#185742">${label}</text><text x="${cx}" y="${cy+24}" text-anchor="middle" font-size="10" fill="#185742">nucleus</text><text x="215" y="295" text-anchor="middle" font-size="14" fill="#253b34">${a.name} · ${counts.join(', ')} electrons per shell</text><text x="215" y="317" text-anchor="middle" font-size="12" fill="#49665c">Protons: ${a.protons}   Neutrons: ${neutrons}   Electrons: ${electrons}</text></svg>`;
+for(const k of Object.keys(ATOM_MODELS))document.getElementById('atom-'+k).classList.toggle('selected',k===atomElement);for(const k of ['neutral','ion','isotope'])document.getElementById('atom-'+k).classList.toggle('selected',k===atomMode);
+document.getElementById('atomic-caption').textContent=`Atomic number = ${a.protons}. Mass number = ${a.protons+neutrons}. ${message} Shells are a teaching model; real electrons occupy orbitals rather than fixed circular paths.`}
+
+/* Bonding models are simplified Lewis-electron illustrations, not literal atomic orbits. */
+let bondMode='ionic',bondStep=0;
+function bondingInteractive(){return `<section class="bond-lab"><h3>See how bonding works</h3><p>Follow the outer electrons as atoms form bonds. These are simplified diagrams, not pictures of electrons travelling in fixed orbits.</p><div class="bond-tabs"><button id="ionic-tab" class="selected" onclick="setBondMode('ionic')">Ionic: sodium + chlorine</button><button id="covalent-tab" onclick="setBondMode('covalent')">Covalent: hydrogen + hydrogen</button></div><div class="bond-stage" id="bond-stage" aria-label="Interactive bonding diagram"></div><div class="bond-actions"><button onclick="bondPrevious()">Previous</button><span id="bond-counter">Step 1 of 3</span><button onclick="bondNext()">Next step</button><button onclick="setBondMode(bondMode)">Reset</button></div><p class="bond-caption" id="bond-caption" aria-live="polite"></p></section>`}
+function setBondMode(mode){bondMode=mode;bondStep=0;renderBond()}
+function bondNext(){bondStep=Math.min(2,bondStep+1);renderBond()}
+function bondPrevious(){bondStep=Math.max(0,bondStep-1);renderBond()}
+function renderBond(){
+ const stage=document.getElementById('bond-stage');if(!stage)return;
+ document.getElementById('ionic-tab').classList.toggle('selected',bondMode==='ionic');document.getElementById('covalent-tab').classList.toggle('selected',bondMode==='covalent');
+ document.getElementById('bond-counter').textContent=`Step ${bondStep+1} of 3`;
+ const dot=(x,y)=>`<circle class="electron-dot" cx="${x}" cy="${y}" r="7"/>`;
+ let svg='',caption='';
+ if(bondMode==='ionic'){
+ const moved=bondStep>0;
+ svg=`<svg viewBox="0 0 650 240" role="img" aria-label="Sodium transfers its single valence electron to chlorine"><circle cx="165" cy="110" r="54" fill="#e8f2ed" stroke="#44836e" stroke-width="2"/><circle cx="475" cy="110" r="54" fill="#e9f1fa" stroke="#668eb1" stroke-width="2"/><text x="165" y="117" text-anchor="middle" class="bond-label">${moved?'Na⁺':'Na'}</text><text x="475" y="117" text-anchor="middle" class="bond-label">${moved?'Cl⁻':'Cl'}</text>${[[-38,-33],[-38,0],[-38,33],[0,-64],[0,64],[38,-33],[38,33]].map(([dx,dy])=>dot(475+dx,110+dy)).join('')}${dot(moved?475+64:165+65,110)}${bondStep===1?'<path d="M250 110 L370 110" stroke="#c48d2b" stroke-width="3" stroke-dasharray="7 7"/><path d="M360 102 L374 110 L360 118" fill="none" stroke="#c48d2b" stroke-width="3"/>':''}<text x="165" y="213" text-anchor="middle" class="bond-small">Sodium</text><text x="475" y="213" text-anchor="middle" class="bond-small">Chlorine</text></svg>`;
+ caption=['Sodium has one outer-shell electron. Chlorine has seven. Both are shown using valence-electron dots.','Sodium loses its outer electron, and chlorine gains it. Sodium becomes Na⁺; chlorine becomes Cl⁻.','The oppositely charged ions attract. In solid sodium chloride, many ions form a giant ionic lattice rather than separate NaCl molecules.'][bondStep];
+ }else{
+ const close=bondStep>0;const left=close?267:195,right=close?383:455;
+ svg=`<svg viewBox="0 0 650 240" role="img" aria-label="Two hydrogen atoms share a pair of electrons"><circle cx="${left}" cy="105" r="53" fill="#e8f2ed" stroke="#44836e" stroke-width="2"/><circle cx="${right}" cy="105" r="53" fill="#e9f1fa" stroke="#668eb1" stroke-width="2"/><text x="${left}" y="112" text-anchor="middle" class="bond-label">H</text><text x="${right}" y="112" text-anchor="middle" class="bond-label">H</text>${dot(close?314:left+64,close?96:105)}${dot(close?336:right-64,close?114:105)}${bondStep===2?'<ellipse cx="325" cy="105" rx="37" ry="36" fill="none" stroke="#c48d2b" stroke-width="3" stroke-dasharray="5 5"/>':''}</svg>`;
+ caption=['Each hydrogen atom has one electron. A hydrogen atom can achieve a filled first shell with two electrons.','As the atoms approach, their electrons are shared in the region between the nuclei. Neither hydrogen becomes an ion.','The shared pair forms a single covalent bond, making an H₂ molecule. The electron density is spread out, not two dots parked at fixed positions.'][bondStep];
+ }
+ stage.innerHTML=svg;document.getElementById('bond-caption').textContent=caption;
+}
+
+
+/* Additional interactive teaching visuals. Diagrams are schematic, not to scale. */
+let energyMode='exo',energyStep=0;
+function energyVisual(){return `<section class="visual-lab"><h3>Reaction energy diagrams</h3><p>Compare the energy of reactants and products, and see why some reactions release energy while others absorb it.</p><div class="visual-tabs"><button id="exo-tab" onclick="setEnergyMode('exo')">Exothermic</button><button id="endo-tab" onclick="setEnergyMode('endo')">Endothermic</button></div><div class="visual-canvas" id="energy-canvas"></div><div class="visual-controls"><button onclick="energyStep=Math.max(0,energyStep-1);renderEnergyVisual()">Previous</button><span id="energy-step-label"></span><button onclick="energyStep=Math.min(2,energyStep+1);renderEnergyVisual()">Next step</button><button onclick="setEnergyMode(energyMode)">Reset</button></div><p class="visual-caption" id="energy-caption" aria-live="polite"></p></section>`}
+function setEnergyMode(mode){energyMode=mode;energyStep=0;renderEnergyVisual()}
+function renderEnergyVisual(){const target=document.getElementById('energy-canvas');if(!target)return;const exo=energyMode==='exo',startY=exo?135:255,endY=exo?255:135,peakY=56;
+ document.getElementById('exo-tab').classList.toggle('selected',exo);document.getElementById('endo-tab').classList.toggle('selected',!exo);
+ document.getElementById('energy-step-label').textContent=`Step ${energyStep+1} of 3`;
+ const curve=`M 95 ${startY} C 160 ${startY}, 185 ${peakY}, 260 ${peakY} S 355 ${endY}, 450 ${endY}`;
+ const change=energyStep>=1?`<path d="M 485 ${startY} V ${endY}" stroke="#b67532" stroke-width="3" stroke-dasharray="6 5"/><path d="M 478 ${endY+(exo?-9:9)} L 485 ${endY} L 492 ${endY+(exo?-9:9)}" fill="none" stroke="#b67532" stroke-width="3"/><text x="495" y="${(startY+endY)/2}" font-size="14" fill="#8b5b25">ΔH ${exo?'&lt; 0':'&gt; 0'}</text>`:'';
+ const activation=energyStep===2?`<path d="M 250 ${startY} V ${peakY}" stroke="#518c80" stroke-width="2" stroke-dasharray="5 5"/><text x="265" y="${(startY+peakY)/2}" font-size="13" fill="#326c60">Activation energy</text>`:'';
+ target.innerHTML=`<svg viewBox="0 0 620 355" role="img" aria-label="${exo?'Exothermic':'Endothermic'} reaction energy profile with activation energy barrier"><path d="M 60 32 V 302 H 580" fill="none" stroke="#536b64" stroke-width="2"/><text x="25" y="176" font-size="14" fill="#415a52" transform="rotate(-90 25 176)" text-anchor="middle">Energy</text><text x="318" y="332" font-size="14" fill="#415a52" text-anchor="middle">Reaction progress</text><path d="${curve}" fill="none" stroke="#287b66" stroke-width="4" stroke-linecap="round"/><path d="M 95 ${startY} H 160 M 405 ${endY} H 450" stroke="#287b66" stroke-width="3"/><text x="100" y="${startY-14}" font-size="14" fill="#244c40">Reactants</text><text x="402" y="${endY-14}" font-size="14" fill="#244c40">Products</text>${change}${activation}</svg>`;
+ document.getElementById('energy-caption').textContent=(exo?['The reactants start at a higher energy than the products.','The products are lower in energy. The difference is released to the surroundings, so ΔH is negative.','Even an exothermic reaction needs an initial activation energy barrier. The peak represents the transition state.']:['The reactants start at a lower energy than the products.','The products are higher in energy. Energy is absorbed from the surroundings, so ΔH is positive.','The reaction still has an activation energy barrier. The peak is higher than both reactants and products.'])[energyStep];}
+let balanceStep=0;
+function balancingVisual(){return `<section class="visual-lab"><h3>See what balancing actually means</h3><p>Each circle is an atom. Watch how coefficients change the number of molecules without changing the formula of a molecule.</p><div class="visual-canvas" id="balance-canvas"></div><div class="visual-controls"><button onclick="balanceStep=Math.max(0,balanceStep-1);renderBalanceVisual()">Previous</button><span id="balance-step-label"></span><button onclick="balanceStep=Math.min(2,balanceStep+1);renderBalanceVisual()">Next step</button><button onclick="balanceStep=0;renderBalanceVisual()">Reset</button></div><p class="visual-caption" id="balance-caption" aria-live="polite"></p></section>`}
+function renderBalanceVisual(){const target=document.getElementById('balance-canvas');if(!target)return;
+ const step=balanceStep,lh=step===2?2:1,rw=step>=1?2:1;
+ document.getElementById('balance-step-label').textContent=`Step ${step+1} of 3`;
+ const atom=(x,y,type)=>`<circle cx="${x}" cy="${y}" r="${type==='O'?17:12}" fill="${type==='O'?'#e8aa8b':'#a9d4e6'}" stroke="${type==='O'?'#b16e53':'#528da7'}" stroke-width="1.5"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" fill="#233c45">${type}</text>`;
+ const hydrogen=(x,y)=>atom(x-14,y,'H')+atom(x+14,y,'H');
+ const oxygen=(x,y)=>atom(x-18,y,'O')+atom(x+18,y,'O');
+ const water=(x,y)=>atom(x,y-8,'O')+atom(x-20,y+14,'H')+atom(x+20,y+14,'H');
+ let molecules='';for(let i=0;i<lh;i++)molecules+=hydrogen(85+i*72,125);molecules+=oxygen(250,125);for(let i=0;i<rw;i++)molecules+=water(430+i*90,125);
+ const leftH=2*lh,leftO=2,rightH=2*rw,rightO=rw;
+ target.innerHTML=`<svg viewBox="0 0 620 270" role="img" aria-label="Molecular model of hydrogen and oxygen forming water, with atom counts"><text x="120" y="42" text-anchor="middle" font-size="20" fill="#244c40">${lh===1?'':'2'}H₂ + O₂</text><text x="470" y="42" text-anchor="middle" font-size="20" fill="#244c40">${rw===1?'':'2'}H₂O</text><path d="M 305 124 H 355 M 345 116 L 355 124 L 345 132" fill="none" stroke="#48786b" stroke-width="3"/>${molecules}<text x="155" y="202" text-anchor="middle" font-size="14" fill="#415a52">Reactants: H ${leftH}, O ${leftO}</text><text x="475" y="202" text-anchor="middle" font-size="14" fill="#415a52">Products: H ${rightH}, O ${rightO}</text><text x="310" y="242" text-anchor="middle" font-size="15" fill="${leftH===rightH&&leftO===rightO?'#167253':'#a55e3b'}">${leftH===rightH&&leftO===rightO?'Balanced: same atoms on both sides':'Not balanced yet'}</text></svg>`;
+ document.getElementById('balance-caption').textContent=['Start with H₂ + O₂ → H₂O. There are two oxygen atoms on the left but only one on the right.','Put a 2 in front of H₂O to make two water molecules. Oxygen is balanced, but the products now contain four hydrogen atoms.','Put a 2 in front of H₂. Now both sides have four hydrogen atoms and two oxygen atoms: 2H₂ + O₂ → 2H₂O.'][step];}
+
+
+/* Interactive stoichiometry and pH visuals: self-contained SVG, no external assets. */
+let stoichStep=0,acidMode='scale',acidStep=0;
+function stoichVisual(){return `<section class="visual-lab"><h3>Follow the mole ratio</h3><p>See how the balanced equation 2H₂ + O₂ → 2H₂O connects particles, moles and mass. The models represent groups of molecules, not individual atoms at scale.</p><div class="visual-canvas" id="stoich-canvas"></div><div class="visual-controls"><button onclick="stoichStep=Math.max(0,stoichStep-1);renderStoichVisual()">Previous</button><span id="stoich-step-label"></span><button onclick="stoichStep=Math.min(3,stoichStep+1);renderStoichVisual()">Next step</button><button onclick="stoichStep=0;renderStoichVisual()">Reset</button></div><p class="visual-caption" id="stoich-caption" aria-live="polite"></p></section>`}
+function renderStoichVisual(){const el=document.getElementById('stoich-canvas');if(!el)return;document.getElementById('stoich-step-label').textContent=`Step ${stoichStep+1} of 4`;
+ const stages=[['2 H₂','1 O₂','2 H₂O'],['2 mol H₂','1 mol O₂','2 mol H₂O'],['4 g H₂','32 g O₂','36 g H₂O'],['2 mol H₂','excess O₂','2 mol H₂O']];
+ const boxes=stages[stoichStep];const block=(x,label,sub,color)=>`<rect x="${x}" y="58" width="170" height="128" rx="15" fill="${color}" stroke="#bdd7ce"/><text x="${x+85}" y="103" text-anchor="middle" font-size="23" font-weight="600" fill="#244d42">${label}</text><text x="${x+85}" y="137" text-anchor="middle" font-size="14" fill="#4a625b">${sub}</text>`;
+ el.innerHTML=`<svg viewBox="0 0 650 250" role="img" aria-label="Stoichiometry mole ratio illustrated as reactants and products">${block(18,boxes[0],'hydrogen','#e9f5f0')}${block(235,boxes[1],'oxygen','#eef2fa')}${block(460,boxes[2],'water','#f9f2e8')}<text x="210" y="125" text-anchor="middle" font-size="27" fill="#537367">+</text><path d="M 412 124 H 452 M 442 116 L 452 124 L 442 132" fill="none" stroke="#537367" stroke-width="3"/><text x="325" y="226" text-anchor="middle" font-size="15" fill="#456158">2H₂ + O₂ → 2H₂O</text></svg>`;
+ document.getElementById('stoich-caption').textContent=['The coefficients tell us the particle ratio: two hydrogen molecules react with one oxygen molecule to form two water molecules.','The same 2:1:2 ratio applies to amounts in moles. Coefficients do not give a mass ratio.','Using approximate molar masses, 4 g of hydrogen and 32 g of oxygen produce 36 g of water. Mass is conserved.','If you have 2 mol of H₂ and more than enough O₂, hydrogen limits the amount of product to 2 mol of H₂O.'][stoichStep];}
+function acidVisual(){return `<section class="visual-lab"><h3>Explore pH and neutralisation</h3><p>Switch between a pH scale and a particle-level view of acid–base neutralisation. The diagrams are simplified models of dilute aqueous solutions.</p><div class="visual-tabs"><button id="acid-scale-tab" onclick="setAcidMode('scale')">pH scale</button><button id="acid-neutral-tab" onclick="setAcidMode('neutral')">Neutralisation</button></div><div class="visual-canvas" id="acid-canvas"></div><div class="visual-controls"><button onclick="acidStep=Math.max(0,acidStep-1);renderAcidVisual()">Previous</button><span id="acid-step-label"></span><button onclick="acidStep=Math.min(2,acidStep+1);renderAcidVisual()">Next step</button><button onclick="acidStep=0;renderAcidVisual()">Reset</button></div><p class="visual-caption" id="acid-caption" aria-live="polite"></p></section>`}
+function setAcidMode(mode){acidMode=mode;acidStep=0;renderAcidVisual()}
+function renderAcidVisual(){const el=document.getElementById('acid-canvas');if(!el)return;document.getElementById('acid-scale-tab').classList.toggle('selected',acidMode==='scale');document.getElementById('acid-neutral-tab').classList.toggle('selected',acidMode==='neutral');document.getElementById('acid-step-label').textContent=`Step ${acidStep+1} of 3`;
+ if(acidMode==='scale'){const selected=[3,5,7][acidStep];let ticks='';for(let i=0;i<=14;i++){const x=45+i*39;ticks+=`<rect x="${x}" y="83" width="38" height="38" fill="hsl(${Math.round(i*10)},60%,${i===7?72:78}%)"/><text x="${x+19}" y="145" text-anchor="middle" font-size="13" fill="#354d47">${i}</text>`;}const sx=45+selected*39+19;el.innerHTML=`<svg viewBox="0 0 650 235" role="img" aria-label="pH scale from zero to fourteen with selected pH ${selected}"><text x="45" y="45" font-size="16" fill="#315d50">Acidic</text><text x="325" y="45" text-anchor="middle" font-size="16" fill="#315d50">Neutral at 25 °C</text><text x="603" y="45" text-anchor="end" font-size="16" fill="#315d50">Basic</text>${ticks}<path d="M ${sx} 64 L ${sx-10} 73 L ${sx+10} 73 Z" fill="#244e40"/><text x="325" y="192" text-anchor="middle" font-size="20" font-weight="600" fill="#244e40">pH ${selected}</text><text x="325" y="216" text-anchor="middle" font-size="15" fill="#506960">[H₃O⁺] ≈ 10⁻${selected} mol/L</text></svg>`;document.getElementById('acid-caption').textContent=['At pH 3, hydronium concentration is approximately 0.001 mol/L. This solution is acidic.','At pH 5, hydronium concentration is approximately 0.00001 mol/L: 100 times lower than at pH 3.','At 25 °C, neutral water has pH 7. Each one-unit pH change represents a tenfold change in hydronium concentration.'][acidStep];}
+ else {const labels=[['H₃O⁺','OH⁻'],['H₂O','H₂O'],['Na⁺','Cl⁻']][acidStep];const circle=(x,t,c)=>`<circle cx="${x}" cy="115" r="56" fill="${c}" stroke="#a9c9bf" stroke-width="2"/><text x="${x}" y="122" text-anchor="middle" font-size="25" fill="#244d42">${t}</text>`;el.innerHTML=`<svg viewBox="0 0 650 245" role="img" aria-label="Acid base neutralisation particle model">${circle(160,labels[0],'#eaf3f8')}${circle(490,labels[1],'#e9f5ee')}<text x="325" y="125" text-anchor="middle" font-size="34" fill="#4d6d62">${acidStep===0?'+':acidStep===1?'→':'+'}</text><text x="325" y="213" text-anchor="middle" font-size="15" fill="#4d6d62">${acidStep===2?'Spectator ions remain dissolved':'Simplified aqueous particle model'}</text></svg>`;document.getElementById('acid-caption').textContent=['Hydronium ions from an acid and hydroxide ions from a base can react in solution.','The net ionic equation is H₃O⁺ + OH⁻ → 2H₂O. Water forms when the acidic and basic ions react.','For HCl + NaOH, sodium and chloride ions remain dissolved as spectator ions. The overall equation is HCl + NaOH → NaCl + H₂O.'][acidStep];}}
+
+function practiceLesson(k){document.getElementById('quiz-topic').value=k;showView('practice');startQuiz();}
+function startQuiz(){const k=document.getElementById('quiz-topic').value,level=document.getElementById('quiz-level').value,count=+document.getElementById('quiz-count').value;let pool=LESSONS[k].questions.filter(q=>level==='mixed'||q[6]===level);if(!pool.length)pool=LESSONS[k].questions;quizQuestions=Array.from({length:count},(_,i)=>{let q=pool[i%pool.length];return {q,opts:shuffleArray(q.slice(1,5).map((value,i)=>({value,correct:i===0})))}});quizIndex=0;quizScore=0;renderQuiz();}
+function renderQuiz(){const area=document.getElementById('quiz-area');if(quizIndex>=quizQuestions.length){document.getElementById('quiz-progress').textContent='Quiz complete';area.innerHTML=`<div class="lesson"><h2>Your score: ${quizScore}/${quizQuestions.length}</h2><p>Review the notes or try another quiz to strengthen your understanding.</p><button onclick="startQuiz()">Try another quiz</button></div>`;return;}quizAnswered=false;const item=quizQuestions[quizIndex];document.getElementById('quiz-progress').textContent=`Question ${quizIndex+1} of ${quizQuestions.length} · ${quizScore} correct`;area.innerHTML=`<div class="practice-card"><h3>Question ${quizIndex+1}</h3><p class="practice-q">${esc(item.q[0])}</p><div class="practice-options" id="active-options">${item.opts.map((o,i)=>`<button onclick="answerQuiz(${i})">${esc(o.value)}</button>`).join('')}</div><div id="answer-explain"></div></div>`;}
+function answerQuiz(i){if(quizAnswered)return;quizAnswered=true;const item=quizQuestions[quizIndex],selected=item.opts[i];if(selected.correct)quizScore++;const buttons=document.querySelectorAll('#active-options button');buttons.forEach((b,j)=>{b.disabled=true;if(item.opts[j].correct){b.style.borderColor='#0d8a66';b.style.background='#e8f8f0';}else if(j===i){b.style.borderColor='#c66';b.style.background='#fff0ed';}});document.getElementById('answer-explain').innerHTML=`<div class="answer-feedback"><strong>${selected.correct?'Correct!':'Not quite.'}</strong> ${esc(item.q[5])}</div><div style="margin-top:14px"><button onclick="quizIndex++;renderQuiz()">${quizIndex+1===quizQuestions.length?'See results':'Next question →'}</button></div>`;document.getElementById('quiz-progress').textContent=`Question ${quizIndex+1} of ${quizQuestions.length} · ${quizScore} correct`;}
+setupLearning();
+
+/* ---------- Init ---------- */
+renderPeriodic();
+document.getElementById('eq').value = 'C3H8 + O2 -> CO2 + H2O';
+document.getElementById('eq').addEventListener('keydown', e => { if (e.key === 'Enter') doBalance(); });
+document.getElementById('reactants').addEventListener('keydown', e => { if (e.key === 'Enter') doPredict(); });
+document.getElementById('formula').addEventListener('keydown', e => { if (e.key === 'Enter') doMass(); });
+doBalance();
+</script>
+</body>
+</html>
